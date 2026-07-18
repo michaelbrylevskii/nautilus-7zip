@@ -1,0 +1,6 @@
+option(
+  'nautilus_extension_dir',
+  type: 'string',
+  value: '',
+  description: 'Override the nautilus-python extension installation directory',
+)

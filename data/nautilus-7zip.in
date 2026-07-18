@@ -1,0 +1,4 @@
+#!@PYTHON@
+from nautilus_7zip.main import main
+
+raise SystemExit(main())
