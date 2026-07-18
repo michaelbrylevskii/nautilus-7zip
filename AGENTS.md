@@ -85,6 +85,8 @@ Keep option validation and command generation independent of GTK:
 - Preserve keyboard accessibility and visible labels for form controls.
 - Let option forms request their natural height so all controls are initially
   visible; retain a scroller as the fallback for small displays and large text.
+- Keep form windows resizable for long paths, large text, tiling, and adaptive
+  layouts. Do not replace adaptive sizing with a fixed, non-resizable window.
 
 ## Testing requirements
 

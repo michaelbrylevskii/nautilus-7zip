@@ -328,6 +328,7 @@ class ProgressWindow(Adw.ApplicationWindow):
         log_scroller = Gtk.ScrolledWindow(child=self.log)
         log_scroller.set_has_frame(True)
         log_scroller.set_min_content_height(240)
+        log_scroller.set_vexpand(True)
         self.details = Gtk.Expander(label=_("Details"), expanded=False)
         self.details.set_child(log_scroller)
         self.details.set_vexpand(True)
