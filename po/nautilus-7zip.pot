@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nautilus-7zip\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-18 16:05-0300\n"
+"POT-Creation-Date: 2026-07-18 16:21-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,38 +26,38 @@ msgstr ""
 msgid "Create and extract archives with 7-Zip"
 msgstr ""
 
-#: src/extension/nautilus_7zip.py:34
+#: src/extension/nautilus_7zip_extension.py:38
 msgid "Create archive…"
 msgstr ""
 
-#: src/extension/nautilus_7zip.py:38
+#: src/extension/nautilus_7zip_extension.py:42
 #, python-brace-format
 msgid "Create {name}.7z"
 msgstr ""
 
-#: src/extension/nautilus_7zip.py:44
+#: src/extension/nautilus_7zip_extension.py:48
 #, python-brace-format
 msgid "Create {name}.zip"
 msgstr ""
 
-#: src/extension/nautilus_7zip.py:50
+#: src/extension/nautilus_7zip_extension.py:54
 msgid "Extract…"
 msgstr ""
 
-#: src/extension/nautilus_7zip.py:51
+#: src/extension/nautilus_7zip_extension.py:55
 msgid "Extract here"
 msgstr ""
 
-#: src/extension/nautilus_7zip.py:55
+#: src/extension/nautilus_7zip_extension.py:59
 #, python-brace-format
 msgid "Extract to {name}/"
 msgstr ""
 
-#: src/extension/nautilus_7zip.py:58
+#: src/extension/nautilus_7zip_extension.py:62
 msgid "Test archive"
 msgstr ""
 
-#: src/extension/nautilus_7zip.py:62
+#: src/extension/nautilus_7zip_extension.py:66
 msgid "7-Zip"
 msgstr ""
 

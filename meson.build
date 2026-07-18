@@ -46,7 +46,7 @@ if nautilus_extension_dir == ''
 endif
 
 install_data(
-  'src/extension/nautilus_7zip.py',
+  'src/extension/nautilus_7zip_extension.py',
   install_dir: nautilus_extension_dir,
 )
 

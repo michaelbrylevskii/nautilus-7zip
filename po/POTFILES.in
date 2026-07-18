@@ -1,4 +1,4 @@
 data/io.github.nautilus_7zip.Nautilus7Zip.desktop.in
-src/extension/nautilus_7zip.py
+src/extension/nautilus_7zip_extension.py
 src/nautilus_7zip/application.py
 src/nautilus_7zip/main.py

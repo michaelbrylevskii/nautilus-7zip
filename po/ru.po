@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nautilus-7zip 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-18 16:05-0300\n"
+"POT-Creation-Date: 2026-07-18 16:21-0300\n"
 "PO-Revision-Date: 2026-07-18 16:10-0300\n"
 "Last-Translator: Nautilus 7-Zip contributors\n"
 "Language-Team: Russian\n"
@@ -22,38 +22,38 @@ msgstr "7-Zip для Nautilus"
 msgid "Create and extract archives with 7-Zip"
 msgstr "Создание и распаковка архивов с помощью 7-Zip"
 
-#: src/extension/nautilus_7zip.py:34
+#: src/extension/nautilus_7zip_extension.py:38
 msgid "Create archive…"
 msgstr "Создать архив…"
 
-#: src/extension/nautilus_7zip.py:38
+#: src/extension/nautilus_7zip_extension.py:42
 #, python-brace-format
 msgid "Create {name}.7z"
 msgstr "Создать {name}.7z"
 
-#: src/extension/nautilus_7zip.py:44
+#: src/extension/nautilus_7zip_extension.py:48
 #, python-brace-format
 msgid "Create {name}.zip"
 msgstr "Создать {name}.zip"
 
-#: src/extension/nautilus_7zip.py:50
+#: src/extension/nautilus_7zip_extension.py:54
 msgid "Extract…"
 msgstr "Распаковать…"
 
-#: src/extension/nautilus_7zip.py:51
+#: src/extension/nautilus_7zip_extension.py:55
 msgid "Extract here"
 msgstr "Распаковать здесь"
 
-#: src/extension/nautilus_7zip.py:55
+#: src/extension/nautilus_7zip_extension.py:59
 #, python-brace-format
 msgid "Extract to {name}/"
 msgstr "Распаковать в {name}/"
 
-#: src/extension/nautilus_7zip.py:58
+#: src/extension/nautilus_7zip_extension.py:62
 msgid "Test archive"
 msgstr "Проверить архив"
 
-#: src/extension/nautilus_7zip.py:62
+#: src/extension/nautilus_7zip_extension.py:66
 msgid "7-Zip"
 msgstr "7-Zip"
 

@@ -86,7 +86,7 @@ The default user installation places files under:
 ```text
 ~/.local/bin/nautilus-7zip
 ~/.local/lib/python*/site-packages/nautilus_7zip/
-~/.local/share/nautilus-python/extensions/nautilus_7zip.py
+~/.local/share/nautilus-python/extensions/nautilus_7zip_extension.py
 ~/.local/share/locale/
 ```
 

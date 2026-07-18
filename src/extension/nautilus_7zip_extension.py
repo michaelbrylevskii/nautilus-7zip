@@ -1,4 +1,8 @@
-"""Nautilus menu provider for 7-Zip for Nautilus."""
+"""Nautilus menu provider for 7-Zip for Nautilus.
+
+The module filename intentionally differs from the ``nautilus_7zip`` package
+name; nautilus-python adds this directory to ``sys.path`` while loading it.
+"""
 
 from __future__ import annotations
 

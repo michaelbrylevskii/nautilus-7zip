@@ -27,7 +27,7 @@ changing the project.
 
 There are two processes:
 
-1. `src/extension/nautilus_7zip.py` is a deliberately thin
+1. `src/extension/nautilus_7zip_extension.py` is a deliberately thin
    `Nautilus.MenuProvider`. It filters non-local selections, builds menu items,
    writes a mode-0600 JSON selection manifest, and starts the helper.
 2. `src/nautilus_7zip/application.py` is a standalone Adwaita application. It
@@ -36,6 +36,10 @@ There are two processes:
 
 Do not add archive traversal, compression, blocking waits, or complex GTK code
 to the Nautilus process. A helper crash must not crash Nautilus.
+
+The extension module must not be named `nautilus_7zip.py`: nautilus-python puts
+the extensions directory on `sys.path`, so that filename shadows the installed
+`nautilus_7zip` package and breaks imports.
 
 Keep option validation and command generation independent of GTK:
 
