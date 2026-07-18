@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .commands import CommandSpec
-from .progress import parse_progress
+from .progress import parse_progress, render_terminal_output
 
 OutputCallback = Callable[[str], None]
 ProgressCallback = Callable[[int], None]
@@ -121,10 +121,12 @@ class SubprocessRunner:
 
         if process.stdout is not None:
             for line in process.stdout:
-                output_callback(line)
                 percent = parse_progress(line)
                 if percent is not None:
                     progress_callback(percent)
+                rendered = render_terminal_output(line)
+                if rendered:
+                    output_callback(rendered)
 
         returncode = process.wait()
         return RunResult(returncode, cancelled=operation.cancelled)

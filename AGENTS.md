@@ -47,7 +47,7 @@ Keep option validation and command generation independent of GTK:
 - `commands.py`: `CommandSpec` and safe 7-Zip argv construction;
 - `paths.py`: naming and archive detection;
 - `selection.py`: secure selection-manifest transfer;
-- `progress.py`: console progress parsing;
+- `progress.py`: console progress parsing and terminal-control rendering;
 - `runner.py`: cancellable subprocess execution;
 - `application.py`: platform UI adapter only.
 
@@ -76,6 +76,9 @@ Keep option validation and command generation independent of GTK:
 - Long operations must run outside the GTK main loop. Dispatch UI updates using
   `GLib.idle_add` or an equivalent main-context mechanism.
 - Keep progress log memory bounded.
+- Keep technical output collapsed by default. Render 7-Zip's terminal controls
+  before inserting output into GTK; never expose raw backspace or ANSI control
+  sequences as replacement glyphs.
 - When replacing a form window with progress, construct and register the
   progress window before closing the form; a closed window may no longer return
   its application from `get_application()`.
@@ -125,7 +128,8 @@ Implemented:
 - interactive and quick 7z/ZIP creation;
 - configurable format, level, solid mode, password, header encryption, output;
 - extraction destination and overwrite policy;
-- integrity testing, progress, cancellation, and bounded logs;
+- integrity testing, progress, cancellation, and bounded, collapsible logs;
+- terminal-style rendering of 7-Zip backspace output for the GTK details view;
 - stdin password transport;
 - Meson installation, gettext scaffolding, complete Russian catalog;
 - unit tests and GitHub Actions workflow.

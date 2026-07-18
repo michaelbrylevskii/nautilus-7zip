@@ -42,6 +42,26 @@ def test_run_blocking_captures_output_progress_and_stdin(tmp_path: Path) -> None
     assert password_file.read_text() == "secret\n"
 
 
+def test_run_blocking_renders_terminal_backspaces_but_parses_raw_progress() -> None:
+    script = (
+        "import sys; "
+        "sys.stdout.write(' 25%\\b\\b\\b\\b    \\b\\b\\b\\b+ source.txt\\n'); "
+        "sys.stdout.flush()"
+    )
+    output: list[str] = []
+    progress: list[int] = []
+
+    result = SubprocessRunner().run_blocking(
+        CommandSpec((sys.executable, "-c", script)),
+        on_output=output.append,
+        on_progress=progress.append,
+    )
+
+    assert result.succeeded
+    assert output == ["+ source.txt\n"]
+    assert progress == [25]
+
+
 def test_run_blocking_reports_missing_executable() -> None:
     result = SubprocessRunner().run_blocking(CommandSpec(("/definitely/missing/7z",)))
     assert result.returncode == 127

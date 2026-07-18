@@ -23,6 +23,7 @@ built-in **Compress…** action and does not bundle an archiving engine.
 - Configurable overwrite behavior during extraction.
 - Archive integrity testing.
 - Cancellable background operations with parsed 7-Zip progress.
+- Collapsed technical details with terminal control sequences rendered as plain text.
 - English source UI and fallback, with gettext-based localization.
 - Complete Russian translation included.
 - Passwords are sent through stdin instead of process arguments.
@@ -42,6 +43,18 @@ built-in **Compress…** action and does not bundle an archiving engine.
 
 Remote locations such as `sftp://` are deliberately excluded because the 7-Zip
 CLI requires native filesystem paths.
+
+### Quick-action defaults
+
+The two quick creation actions use compression level **Normal** (`-mx=5`),
+automatic threading (`-mmt=on`), no password, and no post-creation integrity
+test. The 7z action enables solid mode; the ZIP action uses Deflate. The output
+is placed beside the selection, and an incrementing suffix is added rather than
+overwriting an existing archive.
+
+During an operation, the window shows its status and progress bar. Detailed
+7-Zip output is available under the collapsed **Details** section and opens
+automatically if the operation fails.
 
 ## Requirements
 
@@ -150,7 +163,8 @@ meson test -C build --print-errorlogs
 The coverage gate is 85%. Platform adapters requiring a live GTK display or a
 running Nautilus instance are excluded from line coverage; their logic is kept
 thin, while command construction, input validation, path handling, selection
-manifests, progress parsing, and process execution are covered directly.
+manifests, terminal-output rendering, progress parsing, and process execution
+are covered directly.
 
 ### Running the helper without Nautilus
 

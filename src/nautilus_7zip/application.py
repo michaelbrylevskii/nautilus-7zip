@@ -301,7 +301,7 @@ class ProgressWindow(Adw.ApplicationWindow):
 
     def __init__(self, application: Adw.Application, specs: list[CommandSpec]) -> None:
         super().__init__(application=application, title=_("7-Zip operation"))
-        self.set_default_size(680, 440)
+        self.set_default_size(680, 220)
         self._specs = deque(specs)
         self._handle: OperationHandle | None = None
         self._runner = SubprocessRunner(dispatcher=GLib.idle_add)
@@ -321,9 +321,19 @@ class ProgressWindow(Adw.ApplicationWindow):
         self.progress = Gtk.ProgressBar(show_text=True)
         self.log = Gtk.TextView(editable=False, monospace=True, cursor_visible=False)
         self.log.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        self.log.set_left_margin(8)
+        self.log.set_right_margin(8)
+        self.log.set_top_margin(8)
+        self.log.set_bottom_margin(8)
+        log_scroller = Gtk.ScrolledWindow(child=self.log)
+        log_scroller.set_has_frame(True)
+        log_scroller.set_min_content_height(240)
+        self.details = Gtk.Expander(label=_("Details"), expanded=False)
+        self.details.set_child(log_scroller)
+        self.details.set_vexpand(True)
         content.append(self.status)
         content.append(self.progress)
-        content.append(Gtk.ScrolledWindow(child=self.log, vexpand=True))
+        content.append(self.details)
 
         controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8, halign=Gtk.Align.END)
         self.cancel_button = Gtk.Button(label=_("Cancel"))
@@ -384,6 +394,7 @@ class ProgressWindow(Adw.ApplicationWindow):
             )
             self.status.set_label(_("Operation failed"))
             self._append_output("\n" + detail + "\n")
+            self.details.set_expanded(True)
         self._finish()
 
     def _cancel(self, _button: Gtk.Button) -> None:

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nautilus-7zip\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-18 16:21-0300\n"
+"POT-Creation-Date: 2026-07-18 16:47-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: data/io.github.nautilus_7zip.Nautilus7Zip.desktop.in:2
-#: src/nautilus_7zip/application.py:413
+#: src/nautilus_7zip/application.py:432
 msgid "7-Zip for Nautilus"
 msgstr ""
 
@@ -77,144 +77,148 @@ msgstr ""
 msgid "Unable to start operation"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:146 src/nautilus_7zip/application.py:323
-#: src/nautilus_7zip/application.py:424
+#: src/nautilus_7zip/application.py:146 src/nautilus_7zip/application.py:341
+#: src/nautilus_7zip/application.py:443
 msgid "Close"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:157 src/nautilus_7zip/application.py:197
+#: src/nautilus_7zip/application.py:167 src/nautilus_7zip/application.py:207
 msgid "Create archive"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:161 src/nautilus_7zip/application.py:258
+#: src/nautilus_7zip/application.py:171 src/nautilus_7zip/application.py:267
 msgid "Destination"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:163
+#: src/nautilus_7zip/application.py:173
 msgid "Archive name"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:170
+#: src/nautilus_7zip/application.py:180
 msgid "Format"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:174
+#: src/nautilus_7zip/application.py:184
 msgid "Store (no compression)"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:175
+#: src/nautilus_7zip/application.py:185
 msgid "Fastest"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:176
+#: src/nautilus_7zip/application.py:186
 msgid "Fast"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:177
+#: src/nautilus_7zip/application.py:187
 msgid "Normal"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:178
+#: src/nautilus_7zip/application.py:188
 msgid "Maximum"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:179
+#: src/nautilus_7zip/application.py:189
 msgid "Ultra"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:183
+#: src/nautilus_7zip/application.py:193
 msgid "Compression level"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:186
+#: src/nautilus_7zip/application.py:196
 msgid "Password (optional)"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:189
+#: src/nautilus_7zip/application.py:199
 msgid "Solid archive"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:190
+#: src/nautilus_7zip/application.py:200
 msgid "Encrypt file names"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:191
+#: src/nautilus_7zip/application.py:201
 msgid "Test archive after creation"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:195
+#: src/nautilus_7zip/application.py:205
 msgid "Options"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:213
+#: src/nautilus_7zip/application.py:223
 msgid "Archive name must not be empty."
 msgstr ""
 
-#: src/nautilus_7zip/application.py:216
+#: src/nautilus_7zip/application.py:226
 msgid "Destination folder does not exist."
 msgstr ""
 
-#: src/nautilus_7zip/application.py:223
+#: src/nautilus_7zip/application.py:233
 msgid "A password is required to encrypt file names."
 msgstr ""
 
-#: src/nautilus_7zip/application.py:253
+#: src/nautilus_7zip/application.py:262
 msgid "Extract archive"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:260
+#: src/nautilus_7zip/application.py:269
 msgid "Password (if required)"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:263
+#: src/nautilus_7zip/application.py:272
 msgid "Rename extracted files"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:264
+#: src/nautilus_7zip/application.py:273
 msgid "Overwrite existing files"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:265
+#: src/nautilus_7zip/application.py:274
 msgid "Skip existing files"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:267
+#: src/nautilus_7zip/application.py:276
 msgid "If a file already exists"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:269
+#: src/nautilus_7zip/application.py:278
 msgid "Extract"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:278
+#: src/nautilus_7zip/application.py:287
 msgid "The parent of the destination folder does not exist."
 msgstr ""
 
-#: src/nautilus_7zip/application.py:295
+#: src/nautilus_7zip/application.py:303
 msgid "7-Zip operation"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:321
+#: src/nautilus_7zip/application.py:331
+msgid "Details"
+msgstr ""
+
+#: src/nautilus_7zip/application.py:339
 msgid "Cancel"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:337
+#: src/nautilus_7zip/application.py:355
 msgid "Operation completed successfully"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:372
+#: src/nautilus_7zip/application.py:390
 msgid "Operation cancelled"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:374
+#: src/nautilus_7zip/application.py:392
 #, python-brace-format
 msgid "7-Zip exited with status {status}."
 msgstr ""
 
-#: src/nautilus_7zip/application.py:377
+#: src/nautilus_7zip/application.py:395
 msgid "Operation failed"
 msgstr ""
 
-#: src/nautilus_7zip/application.py:385
+#: src/nautilus_7zip/application.py:404
 msgid "Cancelling…"
 msgstr ""
