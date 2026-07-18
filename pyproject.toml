@@ -41,6 +41,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 markers = [
     "integration: exercises the installed 7z executable",
+    "gtk: requires GTK 4 and libadwaita introspection data",
 ]
 
 [tool.coverage.run]

@@ -111,7 +111,6 @@ class NautilusSevenZipExtension(GObject.GObject, Nautilus.MenuProvider):
                 [helper, action, "--selection-file", str(manifest)],
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
                 close_fds=True,
                 start_new_session=True,
             )

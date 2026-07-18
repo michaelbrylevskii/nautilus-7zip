@@ -76,6 +76,9 @@ Keep option validation and command generation independent of GTK:
 - Long operations must run outside the GTK main loop. Dispatch UI updates using
   `GLib.idle_add` or an equivalent main-context mechanism.
 - Keep progress log memory bounded.
+- When replacing a form window with progress, construct and register the
+  progress window before closing the form; a closed window may no longer return
+  its application from `get_application()`.
 - Preserve keyboard accessibility and visible labels for form controls.
 
 ## Testing requirements

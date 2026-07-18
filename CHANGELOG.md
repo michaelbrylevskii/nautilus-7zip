@@ -15,3 +15,9 @@ All notable changes will be documented in this file. The format follows
 - Asynchronous progress display and cancellation.
 - Meson installation and gettext localization scaffolding.
 - Automated test suite with an 85% coverage gate.
+
+### Fixed
+
+- Keep the application alive when replacing create/extract forms with the
+  operation progress window.
+- Preserve helper errors in the Nautilus journal instead of discarding stderr.

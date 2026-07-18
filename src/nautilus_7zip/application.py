@@ -146,6 +146,16 @@ class _FormWindow(Adw.ApplicationWindow):
         dialog.add_response("close", _("Close"))
         dialog.present(self)
 
+    def replace_with_progress(self, specs: list[CommandSpec]) -> None:
+        """Create the next window before detaching this one from the app."""
+
+        application = self.get_application()
+        if application is None:
+            raise RuntimeError("Application is not available")
+        progress = ProgressWindow(application, specs)
+        self.close()
+        progress.start()
+
 
 class CreateArchiveWindow(_FormWindow):
     def __init__(
@@ -239,8 +249,7 @@ class CreateArchiveWindow(_FormWindow):
             if not output.name.casefold().endswith(options.archive_format.suffix):
                 output = output.with_name(output.name + options.archive_format.suffix)
             specs.append(self.builder.test(IntegrityTestOptions(output, password)))
-        self.close()
-        _present_progress(self.get_application(), specs)
+        self.replace_with_progress(specs)
 
 
 class ExtractArchiveWindow(_FormWindow):
@@ -284,8 +293,7 @@ class ExtractArchiveWindow(_FormWindow):
             overwrite=overwrite,
             password=self.password.get_text() or None,
         )
-        self.close()
-        _present_progress(self.get_application(), [self.builder.extract(options)])
+        self.replace_with_progress([self.builder.extract(options)])
 
 
 class ProgressWindow(Adw.ApplicationWindow):
