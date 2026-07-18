@@ -45,6 +45,7 @@ Keep option validation and command generation independent of GTK:
 
 - `models.py`: immutable validated option models;
 - `commands.py`: `CommandSpec` and safe 7-Zip argv construction;
+- `labels.py`: GTK/Nautilus-safe user-visible label formatting;
 - `paths.py`: naming and archive detection;
 - `selection.py`: secure selection-manifest transfer;
 - `progress.py`: console progress parsing and terminal-control rendering;
@@ -71,6 +72,9 @@ Keep option validation and command generation independent of GTK:
 - Source all user-visible strings in English and wrap them with `_()`.
 - English must remain functional without any compiled catalogs.
 - Do not translate technical names (`7z`, ZIP, LZMA2, Deflate, AES-256).
+- Escape literal underscores in Nautilus menu labels as doubled underscores;
+  GTK treats a single underscore as a mnemonic marker. Never apply this escape
+  to filesystem paths or archive names passed to 7-Zip.
 - Keep the helper out of the Nautilus process. Current Nautilus uses GTK 4;
   never attempt to mix GTK 3 into an extension.
 - Long operations must run outside the GTK main loop. Dispatch UI updates using

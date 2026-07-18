@@ -21,6 +21,7 @@ except ValueError:
 from gi.repository import GObject, Nautilus
 
 from nautilus_7zip.i18n import _
+from nautilus_7zip.labels import escape_menu_mnemonics
 from nautilus_7zip.paths import archive_stem, is_archive, suggested_archive_name
 from nautilus_7zip.selection import write_selection_file
 
@@ -63,7 +64,7 @@ class NautilusSevenZipExtension(GObject.GObject, Nautilus.MenuProvider):
 
         root = Nautilus.MenuItem(
             name="NautilusSevenZip::Root",
-            label=_("7-Zip"),
+            label=escape_menu_mnemonics(_("7-Zip")),
         )
         root.set_submenu(submenu)
         return [root]
@@ -91,7 +92,7 @@ class NautilusSevenZipExtension(GObject.GObject, Nautilus.MenuProvider):
     ) -> None:
         item = Nautilus.MenuItem(
             name=f"NautilusSevenZip::{action}",
-            label=label,
+            label=escape_menu_mnemonics(label),
         )
         item.connect("activate", self._activate, action, paths)
         menu.append_item(item)
