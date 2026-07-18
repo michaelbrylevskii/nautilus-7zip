@@ -83,6 +83,8 @@ Keep option validation and command generation independent of GTK:
   progress window before closing the form; a closed window may no longer return
   its application from `get_application()`.
 - Preserve keyboard accessibility and visible labels for form controls.
+- Let option forms request their natural height so all controls are initially
+  visible; retain a scroller as the fallback for small displays and large text.
 
 ## Testing requirements
 

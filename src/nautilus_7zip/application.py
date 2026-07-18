@@ -87,7 +87,7 @@ class NautilusSevenZipApplication(Adw.Application):
 class _FormWindow(Adw.ApplicationWindow):
     def __init__(self, application: Adw.Application, *, title: str) -> None:
         super().__init__(application=application, title=title)
-        self.set_default_size(620, 520)
+        self.set_default_size(680, -1)
 
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(Adw.HeaderBar())
