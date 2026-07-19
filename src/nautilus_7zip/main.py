@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 
+from .backend import SevenZipBackendError, resolve_sevenzip
 from .selection import read_selection_file
 
 ACTIONS = (
@@ -34,8 +34,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--sevenzip",
-        default="7z",
-        help="7-Zip executable to invoke (default: 7z)",
+        metavar="PATH",
+        help="7-Zip executable to use instead of auto-detecting 7z or 7zz",
     )
     return parser
 
@@ -57,20 +57,26 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, ValueError) as error:
         parser.error(str(error))
 
-    executable = shutil.which(namespace.sevenzip)
-    if executable is None:
-        print(
-            f"nautilus-7zip: 7-Zip executable not found: {namespace.sevenzip}",
-            file=sys.stderr,
+    try:
+        backend = resolve_sevenzip(namespace.sevenzip)
+    except SevenZipBackendError as error:
+        print(f"nautilus-7zip: {error}", file=sys.stderr)
+        from .application import NautilusSevenZipApplication
+
+        application = NautilusSevenZipApplication(
+            action=namespace.action,
+            paths=selected,
+            startup_error=str(error),
         )
-        return 127
+        application_status = application.run(["nautilus-7zip"])
+        return application_status or error.exit_code
 
     from .application import NautilusSevenZipApplication
 
     application = NautilusSevenZipApplication(
         action=namespace.action,
         paths=selected,
-        sevenzip=executable,
+        backend=backend,
     )
     return application.run(["nautilus-7zip"])
 

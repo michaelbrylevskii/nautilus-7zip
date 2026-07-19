@@ -7,8 +7,8 @@
 provides a native GTK 4/libadwaita interface for archive creation, extraction,
 and integrity testing.
 
-The project uses the system `7z` executable. It does not replace Nautilus'
-built-in **Compress…** action and does not bundle an archiving engine.
+The project uses a system `7z` or `7zz` executable. It does not replace
+Nautilus' built-in **Compress…** action and does not bundle an archiving engine.
 
 > [!IMPORTANT]
 > The project is currently alpha quality. The command model and process
@@ -33,6 +33,7 @@ built-in **Compress…** action and does not bundle an archiving engine.
 - English source UI and fallback, with gettext-based localization.
 - Complete Russian translation included.
 - Passwords are sent through stdin instead of process arguments.
+- Automatic backend discovery prefers `7z` and falls back to `7zz`.
 
 ## Context menu
 
@@ -98,7 +99,11 @@ Runtime:
 - PyGObject;
 - GTK 4.10 or newer;
 - libadwaita 1.5 or newer;
-- the official 7-Zip CLI, available as `7z`.
+- the official 7-Zip CLI, available as `7z` or `7zz`.
+
+At startup, the helper checks `7z` and then `7zz` from `PATH` and validates the
+first usable executable. Use `--sevenzip /path/to/executable` for a strict
+override; an invalid override is reported instead of silently falling back.
 
 Build and development:
 
@@ -215,7 +220,7 @@ PYTHONPATH=src python -m nautilus_7zip.main extract /path/to/archive.7z
 PYTHONPATH=src python -m nautilus_7zip.main test /path/to/archive.zip
 ```
 
-Use `--sevenzip /path/to/7z` to test another executable.
+Use `--sevenzip /path/to/7z-or-7zz` to test another executable.
 
 ## Architecture
 
@@ -229,7 +234,7 @@ Nautilus process
             ├── validated option models
             ├── safe argv command builder
             ├── cancellable subprocess runner
-            └── system /usr/bin/7z
+            └── validated system 7z or 7zz executable
 ```
 
 The extension never performs compression and never opens GTK windows inside the
@@ -277,14 +282,9 @@ AES-256 with encrypted headers is preferable when confidentiality matters and
 
 ## Roadmap
 
-- Persist non-secret defaults with GSettings.
-- Add compression-method, dictionary-size, and memory-limit controls.
-- Add reusable compression presets.
-- Add `.tar.zst`, `.tar.gz`, and `.tar.xz` workflows.
-- Add desktop notifications and an optional “open destination” action.
-- Add automated GTK smoke tests.
-- Test and package for additional distributions.
-- Add maintained distribution packages.
+The next milestone focuses on backend diagnostics, clean installation across
+distributions, native packaging, and GTK/Nautilus integration tests. See
+[`ROADMAP.md`](ROADMAP.md) for the ordered release plan and scope boundaries.
 
 ## Contributing
 

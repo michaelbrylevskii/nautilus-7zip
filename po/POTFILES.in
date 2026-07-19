@@ -1,4 +1,5 @@
 data/io.github.michaelbrylevskii.Nautilus7Zip.desktop.in
 src/extension/nautilus_7zip_extension.py
 src/nautilus_7zip/application.py
+src/nautilus_7zip/backend.py
 src/nautilus_7zip/main.py

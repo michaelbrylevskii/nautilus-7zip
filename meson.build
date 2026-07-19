@@ -17,6 +17,7 @@ python.install_sources(
   files(
     'src/nautilus_7zip/__init__.py',
     'src/nautilus_7zip/application.py',
+    'src/nautilus_7zip/backend.py',
     'src/nautilus_7zip/commands.py',
     'src/nautilus_7zip/i18n.py',
     'src/nautilus_7zip/labels.py',

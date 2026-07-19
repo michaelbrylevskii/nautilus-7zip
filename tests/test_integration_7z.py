@@ -1,9 +1,9 @@
-import shutil
 from hashlib import sha256
 from pathlib import Path
 
 import pytest
 
+from nautilus_7zip.backend import SevenZipBackendError, resolve_sevenzip
 from nautilus_7zip.commands import SevenZipCommandBuilder
 from nautilus_7zip.models import (
     ArchiveFormat,
@@ -15,14 +15,19 @@ from nautilus_7zip.models import (
 from nautilus_7zip.runner import SubprocessRunner
 
 
+def installed_backend() -> str:
+    try:
+        return resolve_sevenzip().executable
+    except SevenZipBackendError as error:
+        pytest.skip(str(error))
+
+
 @pytest.mark.integration
 def test_encrypted_create_test_extract_round_trip(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    executable = shutil.which("7z")
-    if executable is None:
-        pytest.skip("7z is not installed")
+    executable = installed_backend()
 
     source = tmp_path / "source"
     source.mkdir()
@@ -65,9 +70,7 @@ def test_multivolume_create_test_extract_round_trip(
     tmp_path: Path,
     archive_format: ArchiveFormat,
 ) -> None:
-    executable = shutil.which("7z")
-    if executable is None:
-        pytest.skip("7z is not installed")
+    executable = installed_backend()
 
     source = tmp_path / "payload.bin"
     original = b"".join(sha256(str(index).encode()).digest() for index in range(8192))

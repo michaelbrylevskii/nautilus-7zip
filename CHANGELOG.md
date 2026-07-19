@@ -6,6 +6,13 @@ All notable changes will be documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Automatic discovery and validation of `7z` and `7zz`, preferring the
+  plugin-capable `7z` command when both are available.
+- A strict `--sevenzip PATH` override with visible startup errors for missing,
+  unusable, or timed-out backends.
+
 ## [0.1.0] - 2026-07-19
 
 ### Added

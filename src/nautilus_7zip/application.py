@@ -18,6 +18,7 @@ gi.require_version("Adw", "1")
 gi.require_version("Gtk", "4.0")
 from gi.repository import Adw, Gio, GLib, Gtk, Pango
 
+from .backend import SevenZipBackend
 from .commands import CommandSpec, SevenZipCommandBuilder
 from .i18n import _
 from .models import (
@@ -81,16 +82,32 @@ _OVERWRITE_MODES = (
 
 
 class NautilusSevenZipApplication(Adw.Application):
-    def __init__(self, *, action: str, paths: tuple[Path, ...], sevenzip: str) -> None:
+    def __init__(
+        self,
+        *,
+        action: str,
+        paths: tuple[Path, ...],
+        backend: SevenZipBackend | None = None,
+        startup_error: str | None = None,
+    ) -> None:
+        if (backend is None) == (startup_error is None):
+            raise ValueError("Pass exactly one of backend or startup_error")
         super().__init__(
             application_id=APP_ID,
             flags=Gio.ApplicationFlags.NON_UNIQUE,
         )
         self.action = action
         self.paths = paths
-        self.builder = SevenZipCommandBuilder(sevenzip)
+        self.backend = backend
+        self.startup_error = startup_error
+        self.builder = SevenZipCommandBuilder(backend.executable) if backend is not None else None
 
     def do_activate(self) -> None:
+        if self.startup_error is not None:
+            _show_standalone_error(self, self.startup_error)
+            return
+        if self.builder is None:  # pragma: no cover - guarded by __init__
+            raise RuntimeError("7-Zip backend is not available")
         if self.action == "create":
             CreateArchiveWindow(self, self.paths, self.builder).present()
             return

@@ -15,6 +15,28 @@ from nautilus_7zip.commands import CommandSpec
 
 
 @pytest.mark.gtk
+def test_startup_error_is_presented_before_any_action(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    received: list[tuple[object, str]] = []
+
+    class FakeApplication:
+        startup_error = "backend missing"
+        builder = None
+
+    monkeypatch.setattr(
+        application_module,
+        "_show_standalone_error",
+        lambda application, message: received.append((application, message)),
+    )
+    application = FakeApplication()
+
+    application_module.NautilusSevenZipApplication.do_activate(application)  # type: ignore[arg-type]
+
+    assert received == [(application, "backend missing")]
+
+
+@pytest.mark.gtk
 def test_progress_window_is_created_before_form_is_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

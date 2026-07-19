@@ -18,7 +18,9 @@ changing the project.
 - gettext domain: `nautilus-7zip`.
 - GitHub repository: `michaelbrylevskii/nautilus-7zip` (public).
 - Application ID: `io.github.michaelbrylevskii.Nautilus7Zip`.
-- The system `7z` executable is the backend. Do not bundle 7-Zip.
+- A validated system `7z` or `7zz` executable is the backend. Prefer `7z`, fall
+  back to `7zz`, and keep `--sevenzip` as a strict override. Do not bundle
+  7-Zip.
 - English is the source language and mandatory fallback. Additional locales are
   gettext catalogs selected automatically from the system locale.
 - Supported creation formats are 7z and ZIP.
@@ -44,6 +46,7 @@ the extensions directory on `sys.path`, so that filename shadows the installed
 Keep option validation and command generation independent of GTK:
 
 - `models.py`: immutable validated option models;
+- `backend.py`: bounded backend discovery, validation, and version parsing;
 - `commands.py`: `CommandSpec` and safe 7-Zip argv construction;
 - `labels.py`: GTK/Nautilus-safe user-visible label formatting;
 - `paths.py`: naming and archive detection;
@@ -134,8 +137,8 @@ Keep option validation and command generation independent of GTK:
   ```
 
 - For backend changes, also run a temporary-directory integration check against
-  the installed `7z`: create, test, extract, compare content, and ensure no test
-  archive is written into the repository.
+  the discovered `7z` or `7zz`: create, test, extract, compare content, and
+  ensure no test archive is written into the repository.
 
 ## Build and installation
 
@@ -164,21 +167,19 @@ Implemented:
   and best-effort item statistics;
 - terminal-style rendering of 7-Zip backspace output for the GTK details view;
 - stdin password transport;
+- validated `7z`/`7zz` discovery with a strict executable override;
 - Meson installation, gettext scaffolding, complete Russian catalog;
 - unit and backend integration tests;
 - GitHub Actions CI on every push and pull request;
 - tag-driven GitHub Releases with changelog notes, a Meson source archive, and
   a SHA-256 checksum.
 
-Known follow-ups:
+The ordered product plan lives in `ROADMAP.md`. Immediate follow-ups:
 
-1. Exercise the UI manually under Nautilus 50 and record screenshots.
-2. Persist non-secret defaults with GSettings.
-3. Add compression-method, dictionary-size, and memory-limit controls.
-4. Improve password-prompt/error behavior for encrypted extraction.
-5. Add tar+compressor workflows.
-6. Add a GTK smoke-test harness and test the extension with mocked Nautilus GI.
-7. Add maintained distribution packages.
+1. Add a privacy-safe application and backend diagnostics view.
+2. Exercise clean tagged-release installation across supported distributions.
+3. Add a maintained Arch/Manjaro package recipe.
+4. Add a GTK smoke-test harness and test the extension with mocked Nautilus GI.
 
 ## Definition of done for changes
 
