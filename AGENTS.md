@@ -100,9 +100,10 @@ Keep option validation and command generation independent of GTK:
 - Put concise format descriptions inside the format drop-down list. Keep
   password protection disabled and collapsed until the user explicitly enables
   it. Collect custom volume sizes in a compact dialog with explicit units.
-- Use the same short, visually symmetric two-line layout for solid-block and
-  volume choices. Show exact selected values in the collapsed advanced summary
-  and display a custom volume's actual size rather than the word `Custom`.
+- Use short inline hints only for solid-block and volume choices that benefit
+  from explanation; do not add redundant text to numeric sizes. Show exact
+  selected values in the collapsed advanced summary. Keep a custom volume's
+  actual size as a selectable value and `Custom…` as a repeatable dialog action.
 - A split archive is tested and extracted through its first `.001` volume.
   Detect output collisions against that first volume before starting 7-Zip.
 - Keep progress actions in the header bar. Show elapsed time unconditionally;

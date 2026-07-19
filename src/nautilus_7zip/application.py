@@ -16,7 +16,7 @@ import gi
 
 gi.require_version("Adw", "1")
 gi.require_version("Gtk", "4.0")
-from gi.repository import Adw, Gio, GLib, Gtk
+from gi.repository import Adw, Gio, GLib, Gtk, Pango
 
 from .commands import CommandSpec, SevenZipCommandBuilder
 from .i18n import _
@@ -60,6 +60,7 @@ _SOLID_BLOCKS = (
     SolidBlock.FULL,
 )
 _CUSTOM_VOLUME = -1
+_CUSTOM_VOLUME_ACTION = -2
 _VOLUME_SIZES = (
     None,
     100 * 1024**2,
@@ -67,6 +68,7 @@ _VOLUME_SIZES = (
     2 * 1024**3,
     4095 * 1024**2,
     _CUSTOM_VOLUME,
+    _CUSTOM_VOLUME_ACTION,
 )
 _OVERWRITE_MODES = (
     OverwriteMode.AUTO_RENAME,
@@ -305,26 +307,37 @@ class CreateArchiveWindow(_FormWindow):
         self.solid_block = _described_combo_row(
             _("Solid block"),
             [
-                (_("Auto"), _("Let 7-Zip choose the block size.")),
-                (_("Non-solid"), _("Do not combine files into solid blocks.")),
-                ("256 MiB", _("Use blocks up to 256 MiB.")),
-                ("1 GiB", _("Use blocks up to 1 GiB.")),
-                ("4 GiB", _("Use blocks up to 4 GiB.")),
-                (_("Fully solid"), _("Use one block for the entire archive.")),
+                (_("Auto"), _("Recommended")),
+                (_("Non-solid"), _("Independent extraction")),
+                ("256 MiB", ""),
+                ("1 GiB", ""),
+                ("4 GiB", ""),
+                (_("Fully solid"), _("One block")),
             ],
+            inline=True,
         )
         self.solid_block.set_subtitle(
-            _("Balances compression ratio and access to individual files.")
+            _("Controls how much data is grouped into each solid block.")
         )
+        self._volume_popup_labels = [
+            _("None"),
+            "100 MiB",
+            "700 MiB",
+            "2 GiB",
+            "4095 MiB",
+            "1500 MiB",
+            _("Custom…"),
+        ]
         self.volume = _described_combo_row(
             _("Split into volumes"),
             [
-                (_("None"), _("Create one archive file.")),
-                ("100 MiB", _("Create volumes up to this size.")),
-                ("700 MiB", _("Create volumes up to this size.")),
-                ("2 GiB", _("Create volumes up to this size.")),
-                ("4095 MiB", _("Create volumes up to this size; fits FAT32.")),
-                (_("Custom…"), _("Choose an exact volume size.")),
+                (_("None"), _("Single archive")),
+                ("100 MiB", ""),
+                ("700 MiB", ""),
+                ("2 GiB", ""),
+                ("4095 MiB", "FAT32"),
+                ("1500 MiB", _("Custom value")),
+                (_("Custom…"), _("Choose size")),
             ],
             selected_labels=[
                 _("Single archive"),
@@ -333,20 +346,16 @@ class CreateArchiveWindow(_FormWindow):
                 "2 GiB",
                 "4095 MiB",
                 "1500 MiB",
+                _("Custom…"),
             ],
+            inline=True,
+            popup_labels=self._volume_popup_labels,
         )
-        self.volume.set_subtitle(_("Creates one file or numbered .001 volumes."))
+        self.volume.set_subtitle(
+            _("Controls archive splitting and the maximum size of each volume.")
+        )
         self.volume.connect("notify::selected", self._volume_changed)
-        self.edit_custom_volume = Gtk.Button(
-            icon_name="document-edit-symbolic",
-            tooltip_text=_("Edit custom volume size"),
-            valign=Gtk.Align.CENTER,
-            visible=False,
-        )
-        self.edit_custom_volume.add_css_class("flat")
-        self.edit_custom_volume.connect("clicked", self._edit_custom_volume)
-        self.volume.add_suffix(self.edit_custom_volume)
-        self._last_preset_volume = 0
+        self._last_volume_selection = 0
         self._custom_volume_value = 1500.0
         self._custom_volume_unit = "MiB"
         self._custom_volume_size = 1500 * 1024**2
@@ -381,32 +390,22 @@ class CreateArchiveWindow(_FormWindow):
         self._validate_form()
 
     def _volume_changed(self, _combo: Adw.ComboRow, _param) -> None:
-        is_custom = self._selected_volume() == _CUSTOM_VOLUME
-        self.edit_custom_volume.set_visible(is_custom)
-        if is_custom:
+        if self._selected_volume() == _CUSTOM_VOLUME_ACTION:
             if not self._custom_volume_dialog_open:
                 self._show_custom_volume_dialog()
         else:
-            self._last_preset_volume = self.volume.get_selected()
+            self._last_volume_selection = self.volume.get_selected()
         self._update_advanced_summary()
         self._validate_form()
 
-    def _edit_custom_volume(self, _button: Gtk.Button) -> None:
-        self._show_custom_volume_dialog(revert_on_cancel=False)
-
-    def _show_custom_volume_dialog(self, *, revert_on_cancel: bool = True) -> None:
+    def _show_custom_volume_dialog(self) -> None:
         if self._custom_volume_dialog_open:
             return
         self._custom_volume_dialog_open = True
-        self._custom_cancel_selection = self._last_preset_volume if revert_on_cancel else 5
 
-        dialog = Adw.AlertDialog(
-            heading=_("Custom Volume Size"),
-            body=_("Choose the maximum size of each numbered archive volume."),
-        )
-        dialog.set_content_width(420)
-        size = Adw.SpinRow(
-            title=_("Size"),
+        dialog = Adw.AlertDialog(heading=_("Custom Volume Size"))
+        dialog.set_content_width(360)
+        size = Gtk.SpinButton(
             adjustment=Gtk.Adjustment(
                 value=self._custom_volume_value,
                 lower=0.01,
@@ -416,17 +415,21 @@ class CreateArchiveWindow(_FormWindow):
             ),
             digits=0 if self._custom_volume_unit == "MiB" else 2,
             numeric=True,
+            valign=Gtk.Align.CENTER,
+            width_chars=8,
         )
-        unit = _combo_row(
-            _("Unit"),
-            ["MiB", "GiB"],
+        unit = Gtk.DropDown(
+            model=Gtk.StringList.new(["MiB", "GiB"]),
             selected=0 if self._custom_volume_unit == "MiB" else 1,
+            valign=Gtk.Align.CENTER,
         )
         self._dialog_previous_unit = self._custom_volume_unit
         unit.connect("notify::selected", self._custom_volume_unit_changed, size)
+        row = Adw.ActionRow(title=_("Volume size"))
+        row.add_suffix(size)
+        row.add_suffix(unit)
         group = Adw.PreferencesGroup()
-        group.add(size)
-        group.add(unit)
+        group.add(row)
         dialog.set_extra_child(group)
         dialog.add_response("cancel", _("Cancel"))
         dialog.add_response("apply", _("Apply"))
@@ -438,9 +441,9 @@ class CreateArchiveWindow(_FormWindow):
 
     def _custom_volume_unit_changed(
         self,
-        unit: Adw.ComboRow,
+        unit: Gtk.DropDown,
         _param,
-        size: Adw.SpinRow,
+        size: Gtk.SpinButton,
     ) -> None:
         new_unit = "MiB" if unit.get_selected() == 0 else "GiB"
         old_unit = self._dialog_previous_unit
@@ -457,12 +460,12 @@ class CreateArchiveWindow(_FormWindow):
         self,
         _dialog: Adw.AlertDialog,
         response: str,
-        size: Adw.SpinRow,
-        unit: Adw.ComboRow,
+        size: Gtk.SpinButton,
+        unit: Gtk.DropDown,
     ) -> None:
         if response != "apply":
             self._custom_volume_dialog_open = False
-            self.volume.set_selected(self._custom_cancel_selection)
+            self.volume.set_selected(self._last_volume_selection)
             return
         self._custom_volume_unit = "MiB" if unit.get_selected() == 0 else "GiB"
         self._custom_volume_value = round(
@@ -474,6 +477,7 @@ class CreateArchiveWindow(_FormWindow):
         )
         model = self.volume.get_model()
         if isinstance(model, Gtk.StringList):
+            self._volume_popup_labels[5] = self._custom_volume_display()
             model.splice(5, 1, [self._custom_volume_display()])
             self.volume.set_selected(5)
         self._custom_volume_dialog_open = False
@@ -502,7 +506,7 @@ class CreateArchiveWindow(_FormWindow):
 
     def _volume_size(self) -> int | None:
         selected = self._selected_volume()
-        if selected != _CUSTOM_VOLUME:
+        if selected not in {_CUSTOM_VOLUME, _CUSTOM_VOLUME_ACTION}:
             return selected
         return self._custom_volume_size
 
@@ -837,25 +841,35 @@ def _described_combo_row(
     options: list[tuple[str, str]],
     *,
     selected_labels: list[str] | None = None,
+    inline: bool = False,
+    popup_labels: list[str] | None = None,
 ) -> Adw.ComboRow:
-    popup_labels = [label for label, _description in options]
+    option_labels = [label for label, _description in options]
+    popup_labels = popup_labels if popup_labels is not None else option_labels
+    if len(popup_labels) != len(options):
+        raise ValueError("Popup labels must match described options")
     if selected_labels is not None and len(selected_labels) != len(options):
         raise ValueError("Selected labels must match described options")
-    row = _combo_row(title, selected_labels or popup_labels)
+    row = _combo_row(title, selected_labels or option_labels)
     descriptions = [description for _label, description in options]
     factory = Gtk.SignalListItemFactory()
 
     def setup(_factory: Gtk.SignalListItemFactory, list_item: Gtk.ListItem) -> None:
         box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            spacing=2,
-            margin_top=6,
-            margin_bottom=6,
+            orientation=(Gtk.Orientation.HORIZONTAL if inline else Gtk.Orientation.VERTICAL),
+            spacing=6 if inline else 2,
+            margin_top=4 if inline else 6,
+            margin_bottom=4 if inline else 6,
             margin_start=2,
             margin_end=12,
         )
         primary = Gtk.Label(xalign=0)
-        secondary = Gtk.Label(xalign=0, wrap=True, max_width_chars=48)
+        secondary = Gtk.Label(
+            xalign=0,
+            wrap=not inline,
+            max_width_chars=48,
+            ellipsize=Pango.EllipsizeMode.END if inline else Pango.EllipsizeMode.NONE,
+        )
         secondary.add_css_class("dim-label")
         secondary.add_css_class("caption")
         box.append(primary)
@@ -872,7 +886,9 @@ def _described_combo_row(
         if isinstance(primary, Gtk.Label) and position < len(popup_labels):
             primary.set_label(popup_labels[position])
         if isinstance(secondary, Gtk.Label) and position < len(descriptions):
-            secondary.set_label(descriptions[position])
+            description = descriptions[position]
+            secondary.set_label(description)
+            secondary.set_visible(bool(description))
 
     factory.connect("setup", setup)
     factory.connect("bind", bind)

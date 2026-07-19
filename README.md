@@ -76,10 +76,11 @@ The format picker describes each format inside its drop-down list. Password
 protection stays collapsed and disabled until explicitly enabled; 7z archives
 can additionally encrypt file names.
 
-Solid-block and volume presets use the same compact two-line picker layout.
-The collapsed **Advanced Options** summary reports the exact selected thread,
-solid-block, and volume values. A custom volume displays its actual MiB/GiB
-size and can be reopened with the adjacent edit button.
+Solid-block and volume presets use compact inline hints only where they add
+useful context. The collapsed **Advanced Options** summary reports the exact
+selected thread, solid-block, and volume values. A custom volume displays its
+actual MiB/GiB size; the separate **Custom…** action can reopen its compact
+single-row size dialog at any time.
 
 Split archives are written as numbered files such as `backup.7z.001` and
 `backup.7z.002`. Test and extract operations must start with `.001`. The
