@@ -292,7 +292,7 @@ class CreateArchiveWindow(_FormWindow):
             subtitle=_("Tests archive integrity when compression finishes."),
             active=True,
         )
-        self.advanced = Adw.ExpanderRow(title=_("Advanced Options"))
+        self.advanced = Adw.ExpanderRow(title=_("Advanced Options"), subtitle_lines=2)
         hardware_threads = max(1, os.cpu_count() or 1)
         self.threads = _combo_row(
             _("CPU threads"),
@@ -302,32 +302,40 @@ class CreateArchiveWindow(_FormWindow):
             ],
             subtitle=_("Limits CPU usage. Auto uses available processors."),
         )
-        self.solid_block = _combo_row(
+        self.solid_block = _described_combo_row(
             _("Solid block"),
             [
-                _("Auto — Recommended"),
-                _("Non-solid"),
-                "256 MiB",
-                "1 GiB",
-                "4 GiB",
-                _("Fully solid"),
+                (_("Auto"), _("Let 7-Zip choose the block size.")),
+                (_("Non-solid"), _("Do not combine files into solid blocks.")),
+                ("256 MiB", _("Use blocks up to 256 MiB.")),
+                ("1 GiB", _("Use blocks up to 1 GiB.")),
+                ("4 GiB", _("Use blocks up to 4 GiB.")),
+                (_("Fully solid"), _("Use one block for the entire archive.")),
             ],
-            subtitle=_(
-                "Larger blocks can compress better but make individual files slower to extract."
-            ),
         )
-        self.volume = _combo_row(
+        self.solid_block.set_subtitle(
+            _("Balances compression ratio and access to individual files.")
+        )
+        self.volume = _described_combo_row(
             _("Split into volumes"),
             [
-                _("None — Single archive"),
+                (_("None"), _("Create one archive file.")),
+                ("100 MiB", _("Create volumes up to this size.")),
+                ("700 MiB", _("Create volumes up to this size.")),
+                ("2 GiB", _("Create volumes up to this size.")),
+                ("4095 MiB", _("Create volumes up to this size; fits FAT32.")),
+                (_("Custom…"), _("Choose an exact volume size.")),
+            ],
+            selected_labels=[
+                _("Single archive"),
                 "100 MiB",
                 "700 MiB",
                 "2 GiB",
-                _("4095 MiB — FAT32 compatible"),
-                _("Custom…"),
+                "4095 MiB",
+                "1500 MiB",
             ],
-            subtitle=_("Creates numbered .001, .002… files of the selected size."),
         )
+        self.volume.set_subtitle(_("Creates one file or numbered .001 volumes."))
         self.volume.connect("notify::selected", self._volume_changed)
         self.edit_custom_volume = Gtk.Button(
             icon_name="document-edit-symbolic",
@@ -336,7 +344,7 @@ class CreateArchiveWindow(_FormWindow):
             visible=False,
         )
         self.edit_custom_volume.add_css_class("flat")
-        self.edit_custom_volume.connect("clicked", self._show_custom_volume_dialog)
+        self.edit_custom_volume.connect("clicked", self._edit_custom_volume)
         self.volume.add_suffix(self.edit_custom_volume)
         self._last_preset_volume = 0
         self._custom_volume_value = 1500.0
@@ -376,25 +384,21 @@ class CreateArchiveWindow(_FormWindow):
         is_custom = self._selected_volume() == _CUSTOM_VOLUME
         self.edit_custom_volume.set_visible(is_custom)
         if is_custom:
-            self.volume.set_subtitle(
-                _("Custom size: {size} per volume.").format(
-                    size=self._custom_volume_display(),
-                )
-            )
             if not self._custom_volume_dialog_open:
                 self._show_custom_volume_dialog()
         else:
             self._last_preset_volume = self.volume.get_selected()
-            self.volume.set_subtitle(
-                _("Creates numbered .001, .002… files of the selected size.")
-            )
         self._update_advanced_summary()
         self._validate_form()
 
-    def _show_custom_volume_dialog(self, *_args) -> None:
+    def _edit_custom_volume(self, _button: Gtk.Button) -> None:
+        self._show_custom_volume_dialog(revert_on_cancel=False)
+
+    def _show_custom_volume_dialog(self, *, revert_on_cancel: bool = True) -> None:
         if self._custom_volume_dialog_open:
             return
         self._custom_volume_dialog_open = True
+        self._custom_cancel_selection = self._last_preset_volume if revert_on_cancel else 5
 
         dialog = Adw.AlertDialog(
             heading=_("Custom Volume Size"),
@@ -456,9 +460,9 @@ class CreateArchiveWindow(_FormWindow):
         size: Adw.SpinRow,
         unit: Adw.ComboRow,
     ) -> None:
-        self._custom_volume_dialog_open = False
         if response != "apply":
-            self.volume.set_selected(self._last_preset_volume)
+            self._custom_volume_dialog_open = False
+            self.volume.set_selected(self._custom_cancel_selection)
             return
         self._custom_volume_unit = "MiB" if unit.get_selected() == 0 else "GiB"
         self._custom_volume_value = round(
@@ -468,11 +472,11 @@ class CreateArchiveWindow(_FormWindow):
         self._custom_volume_size = parse_binary_size(
             f"{self._custom_volume_value:g}{self._custom_volume_unit}"
         )
-        self.volume.set_subtitle(
-            _("Custom size: {size} per volume.").format(
-                size=self._custom_volume_display(),
-            )
-        )
+        model = self.volume.get_model()
+        if isinstance(model, Gtk.StringList):
+            model.splice(5, 1, [self._custom_volume_display()])
+            self.volume.set_selected(5)
+        self._custom_volume_dialog_open = False
         self._update_advanced_summary()
 
     def _custom_volume_display(self) -> str:
@@ -504,17 +508,15 @@ class CreateArchiveWindow(_FormWindow):
 
     def _update_advanced_summary(self) -> None:
         parts = [
-            _("Auto threads")
-            if self.threads.get_selected() == 0
-            else _("Custom threads")
+            _("Threads: {value}").format(value=_selected_combo_label(self.threads))
         ]
         if self._archive_format() is ArchiveFormat.SEVEN_ZIP:
             parts.append(
-                _("Auto solid block")
-                if self.solid_block.get_selected() == 0
-                else _("Custom solid block")
+                _("Solid: {value}").format(value=_selected_combo_label(self.solid_block))
             )
-        parts.append(_("Single archive") if self._selected_volume() is None else _("Split archive"))
+        parts.append(
+            _("Volumes: {value}").format(value=_selected_combo_label(self.volume))
+        )
         self.advanced.set_subtitle(" · ".join(parts))
 
     def _validate_form(self, *_args) -> None:
@@ -833,8 +835,13 @@ class ProgressWindow(Adw.ApplicationWindow):
 def _described_combo_row(
     title: str,
     options: list[tuple[str, str]],
+    *,
+    selected_labels: list[str] | None = None,
 ) -> Adw.ComboRow:
-    row = _combo_row(title, [label for label, _description in options])
+    popup_labels = [label for label, _description in options]
+    if selected_labels is not None and len(selected_labels) != len(options):
+        raise ValueError("Selected labels must match described options")
+    row = _combo_row(title, selected_labels or popup_labels)
     descriptions = [description for _label, description in options]
     factory = Gtk.SignalListItemFactory()
 
@@ -857,14 +864,13 @@ def _described_combo_row(
 
     def bind(_factory: Gtk.SignalListItemFactory, list_item: Gtk.ListItem) -> None:
         box = list_item.get_child()
-        item = list_item.get_item()
-        if not isinstance(box, Gtk.Box) or not isinstance(item, Gtk.StringObject):
+        if not isinstance(box, Gtk.Box):
             return
         primary = box.get_first_child()
         secondary = primary.get_next_sibling() if primary is not None else None
-        if isinstance(primary, Gtk.Label):
-            primary.set_label(item.get_string())
         position = list_item.get_position()
+        if isinstance(primary, Gtk.Label) and position < len(popup_labels):
+            primary.set_label(popup_labels[position])
         if isinstance(secondary, Gtk.Label) and position < len(descriptions):
             secondary.set_label(descriptions[position])
 
@@ -872,6 +878,13 @@ def _described_combo_row(
     factory.connect("bind", bind)
     row.set_list_factory(factory)
     return row
+
+
+def _selected_combo_label(row: Adw.ComboRow) -> str:
+    item = row.get_selected_item()
+    if not isinstance(item, Gtk.StringObject):
+        return ""
+    return item.get_string()
 
 
 def _combo_row(
