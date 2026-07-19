@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 class ArchiveFormat(StrEnum):
-    """Archive formats supported for creation in the first release."""
+    """Archive formats supported for creation."""
 
     SEVEN_ZIP = "7z"
     ZIP = "zip"

@@ -13,12 +13,18 @@ authors = [{ name = "Nautilus 7-Zip contributors" }]
 keywords = ["nautilus", "7zip", "7z", "gnome", "archive"]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Environment :: X11 Applications :: GTK",
+    "Intended Audience :: End Users/Desktop",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Topic :: Desktop Environment :: File Managers",
     "Topic :: System :: Archiving :: Compression",
 ]
+
+[project.urls]
+Homepage = "https://github.com/michaelbrylevskii/nautilus-7zip"
+Repository = "https://github.com/michaelbrylevskii/nautilus-7zip.git"
+Issues = "https://github.com/michaelbrylevskii/nautilus-7zip/issues"
+Changelog = "https://github.com/michaelbrylevskii/nautilus-7zip/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -38,7 +44,7 @@ include = ["nautilus_7zip*"]
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers --cov=nautilus_7zip --cov-report=term-missing --cov-report=xml --cov-fail-under=85"
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 markers = [
     "integration: exercises the installed 7z executable",
     "gtk: requires GTK 4 and libadwaita introspection data",

@@ -7,18 +7,66 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: pip
-      - name: Install development tools
-        run: python -m pip install pytest pytest-cov ruff
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            7zip \
+            desktop-file-utils \
+            gettext \
+            gir1.2-adw-1 \
+            gir1.2-gtk-4.0 \
+            ninja-build \
+            python3-gi \
+            python3-venv
+
+      - name: Install development dependencies
+        run: |
+          python3 -m venv --system-site-packages .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -e '.[dev]'
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Verify runtime dependencies
+        run: |
+          7z i > /dev/null
+          .venv/bin/python -c \
+            'import gi; gi.require_version("Gtk", "4.0"); gi.require_version("Adw", "1"); from gi.repository import Adw, Gtk'
+
       - name: Lint
         run: ruff check .
+
+      - name: Build
+        run: |
+          meson setup build --prefix=/usr
+          meson compile -C build
+          desktop-file-validate \
+            build/io.github.michaelbrylevskii.Nautilus7Zip.desktop
+
       - name: Test
-        run: pytest
+        run: meson test -C build --print-errorlogs
+
+      - name: Stage installation
+        run: DESTDIR="$RUNNER_TEMP/install-root" meson install -C build
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14

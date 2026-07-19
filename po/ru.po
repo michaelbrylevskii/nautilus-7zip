@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nautilus-7zip 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-19 01:22-0300\n"
+"POT-Creation-Date: 2026-07-19 01:45-0300\n"
 "PO-Revision-Date: 2026-07-18 16:10-0300\n"
 "Last-Translator: Nautilus 7-Zip contributors\n"
 "Language-Team: Russian\n"
@@ -13,12 +13,12 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: data/io.github.nautilus_7zip.Nautilus7Zip.desktop.in:2
+#: data/io.github.michaelbrylevskii.Nautilus7Zip.desktop.in:2
 #: src/nautilus_7zip/application.py:969
 msgid "7-Zip for Nautilus"
 msgstr "7-Zip для Nautilus"
 
-#: data/io.github.nautilus_7zip.Nautilus7Zip.desktop.in:3
+#: data/io.github.michaelbrylevskii.Nautilus7Zip.desktop.in:3
 msgid "Create and extract archives with 7-Zip"
 msgstr "Создание и распаковка архивов с помощью 7-Zip"
 

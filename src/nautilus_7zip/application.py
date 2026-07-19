@@ -40,7 +40,7 @@ from .progress import format_duration, parse_file_progress
 from .runner import OperationHandle, RunResult, SubprocessRunner
 from .sizes import parse_binary_size
 
-APP_ID = "io.github.nautilus_7zip.Nautilus7Zip"
+APP_ID = "io.github.michaelbrylevskii.Nautilus7Zip"
 
 _FORMATS = (ArchiveFormat.SEVEN_ZIP, ArchiveFormat.ZIP)
 _LEVELS = (

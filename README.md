@@ -1,5 +1,8 @@
 # 7-Zip for Nautilus
 
+[![CI](https://github.com/michaelbrylevskii/nautilus-7zip/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelbrylevskii/nautilus-7zip/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 `nautilus-7zip` adds an explicit **7-Zip** submenu to GNOME Files (Nautilus) and
 provides a native GTK 4/libadwaita interface for archive creation, extraction,
 and integrity testing.
@@ -8,7 +11,7 @@ The project uses the system `7z` executable. It does not replace Nautilus'
 built-in **Compress…** action and does not bundle an archiving engine.
 
 > [!IMPORTANT]
-> The project is currently an alpha-quality MVP. The command model and process
+> The project is currently alpha quality. The command model and process
 > runner are extensively tested, but the Nautilus and GTK integration still
 > needs broader real-world testing across GNOME releases and distributions.
 
@@ -90,11 +93,11 @@ Split archives are written as numbered files such as `backup.7z.001` and
 
 Runtime:
 
-- Linux with GNOME Files/Nautilus 43 or newer;
+- Linux with GNOME Files/Nautilus 43 or newer and nautilus-python API 4;
 - Python 3.11 or newer;
-- `nautilus-python` API 4;
 - PyGObject;
-- GTK 4 and libadwaita 1.5 or newer;
+- GTK 4.10 or newer;
+- libadwaita 1.5 or newer;
 - the official 7-Zip CLI, available as `7z`.
 
 Build and development:
@@ -153,8 +156,8 @@ meson compile -C build
 DESTDIR="$pkgdir" meson install -C build
 ```
 
-An Arch/Manjaro `PKGBUILD` will be added after the first tagged release has a
-stable source URL and checksum.
+No distribution-specific package recipe is currently maintained. Packagers
+should use Meson's `DESTDIR` support shown above.
 
 ### Uninstall a development installation
 
@@ -195,6 +198,12 @@ running Nautilus instance are excluded from line coverage; their logic is kept
 thin, while command construction, input validation, path handling, selection
 manifests, terminal-output rendering, progress parsing, and process execution
 are covered directly.
+
+Every push and pull request runs linting, the Meson build and staged install,
+the test suite, and integration tests against the system `7z`. Tags matching
+`vMAJOR.MINOR.PATCH` run the same verification and publish a GitHub Release with
+the matching `CHANGELOG.md` section, a Meson source archive, and its SHA-256
+checksum. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the maintainer procedure.
 
 ### Running the helper without Nautilus
 
@@ -259,7 +268,7 @@ not be translated.
 - Selection manifests are created with mode `0600` and removed after reading.
 - Only local `file://` selections are accepted by the Nautilus extension.
 - A failed or cancelled archive operation must not delete source data.
-- Destructive post-archive actions are intentionally outside the MVP scope.
+- Destructive post-archive actions are intentionally unsupported.
 
 Users should still understand the encryption properties of the selected archive
 format. ZIP AES encryption is not supported by every ZIP implementation; 7z
@@ -275,7 +284,7 @@ AES-256 with encrypted headers is preferable when confidentiality matters and
 - Add desktop notifications and an optional “open destination” action.
 - Add automated GTK smoke tests.
 - Test and package for additional distributions.
-- Publish an Arch/Manjaro `PKGBUILD` after the first tagged release.
+- Add maintained distribution packages.
 
 ## Contributing
 

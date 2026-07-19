@@ -16,12 +16,12 @@ changing the project.
 - Context-menu root label: `7-Zip`.
 - Executable: `nautilus-7zip`.
 - gettext domain: `nautilus-7zip`.
-- Application ID: `io.github.nautilus_7zip.Nautilus7Zip` until a permanent
-  GitHub owner/organization is selected.
+- GitHub repository: `michaelbrylevskii/nautilus-7zip` (public).
+- Application ID: `io.github.michaelbrylevskii.Nautilus7Zip`.
 - The system `7z` executable is the backend. Do not bundle 7-Zip.
 - English is the source language and mandatory fallback. Additional locales are
   gettext catalogs selected automatically from the system locale.
-- Supported creation formats in the MVP are 7z and ZIP.
+- Supported creation formats are 7z and ZIP.
 
 ## Architecture and boundaries
 
@@ -146,10 +146,10 @@ Keep option validation and command generation independent of GTK:
 - The default extension directory is
   `${datadir}/nautilus-python/extensions`; override it with
   `-Dnautilus_extension_dir=...` if a distribution differs.
-- Keep `DESTDIR` staging functional for future Arch/Manjaro packaging.
+- Keep `DESTDIR` staging functional for downstream distribution packaging.
 - Do not commit `.venv`, build output, coverage databases, or generated caches.
 
-## Current status (initial MVP)
+## Current implementation
 
 Implemented:
 
@@ -165,7 +165,10 @@ Implemented:
 - terminal-style rendering of 7-Zip backspace output for the GTK details view;
 - stdin password transport;
 - Meson installation, gettext scaffolding, complete Russian catalog;
-- unit tests and GitHub Actions workflow.
+- unit and backend integration tests;
+- GitHub Actions CI on every push and pull request;
+- tag-driven GitHub Releases with changelog notes, a Meson source archive, and
+  a SHA-256 checksum.
 
 Known follow-ups:
 
@@ -175,8 +178,7 @@ Known follow-ups:
 4. Improve password-prompt/error behavior for encrypted extraction.
 5. Add tar+compressor workflows.
 6. Add a GTK smoke-test harness and test the extension with mocked Nautilus GI.
-7. Decide the permanent GitHub owner and update the application ID if needed.
-8. Add a release-backed `PKGBUILD` after the first tag.
+7. Add maintained distribution packages.
 
 ## Definition of done for changes
 

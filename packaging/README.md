@@ -2,7 +2,7 @@
 
 Meson supports `DESTDIR` staging and is the canonical packaging entry point.
 
-An Arch/Manjaro `PKGBUILD` is intentionally deferred until the project has a
-published Git remote and a tagged source archive with a stable checksum. Do not
-commit a package recipe containing placeholder owner names or unverifiable
-sources.
+No distribution-specific recipe is currently maintained. Tagged GitHub
+Releases provide the Meson source archive and SHA-256 checksum expected by
+downstream packagers. Package recipes must use verifiable release sources and
+must preserve the runtime requirements documented in `README.md`.

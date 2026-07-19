@@ -6,18 +6,33 @@ All notable changes will be documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-19
+
 ### Added
 
-- Initial Nautilus **7-Zip** submenu.
-- Standalone GTK 4/libadwaita archive creation and extraction dialogs.
-- 7z and ZIP creation with compression and encryption controls.
-- Quick archive creation, extraction variants, and integrity testing.
-- Asynchronous progress display and cancellation.
-- Meson installation and gettext localization scaffolding.
-- Automated test suite with an 85% coverage gate.
+- Nautilus **7-Zip** submenu for local files and folders.
+- Interactive and quick creation of 7z and ZIP archives.
+- Compression level, CPU thread, 7z solid-block, and split-volume controls.
+- Password-protected archives with stdin secret transport and optional 7z
+  header encryption.
+- Configurable extraction, convenient extract-here variants, and integrity
+  testing.
+- Cancellable operation window with parsed progress, elapsed and estimated
+  time, item statistics, and a bounded collapsible technical log.
+- English source interface, Russian gettext translation, desktop metadata, and
+  scalable application icons.
+- Meson installation with `DESTDIR` staging and an editable Python development
+  package.
+- Unit and real-7z integration tests with an 85% coverage gate.
+- Continuous integration for pushes and pull requests, plus tag-driven GitHub
+  Releases built from this changelog.
 
-### Fixed
+### Security
 
-- Keep the application alive when replacing create/extract forms with the
-  operation progress window.
-- Preserve helper errors in the Nautilus journal instead of discarding stderr.
+- Archive operations use argument arrays without a shell.
+- Passwords are excluded from process arguments, logs, and persisted state.
+- Nautilus selections are transferred through mode-0600 manifests and limited
+  to native filesystem paths.
+
+[Unreleased]: https://github.com/michaelbrylevskii/nautilus-7zip/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/michaelbrylevskii/nautilus-7zip/releases/tag/v0.1.0

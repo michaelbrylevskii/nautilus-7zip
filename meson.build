@@ -53,8 +53,8 @@ install_data(
 )
 
 i18n.merge_file(
-  input: 'data/io.github.nautilus_7zip.Nautilus7Zip.desktop.in',
-  output: 'io.github.nautilus_7zip.Nautilus7Zip.desktop',
+  input: 'data/io.github.michaelbrylevskii.Nautilus7Zip.desktop.in',
+  output: 'io.github.michaelbrylevskii.Nautilus7Zip.desktop',
   type: 'desktop',
   po_dir: 'po',
   install: true,
@@ -62,11 +62,11 @@ i18n.merge_file(
 )
 
 install_data(
-  'data/icons/hicolor/scalable/apps/io.github.nautilus_7zip.Nautilus7Zip.svg',
+  'data/icons/hicolor/scalable/apps/io.github.michaelbrylevskii.Nautilus7Zip.svg',
   install_dir: join_paths(datadir, 'icons', 'hicolor', 'scalable', 'apps'),
 )
 install_data(
-  'data/icons/hicolor/symbolic/apps/io.github.nautilus_7zip.Nautilus7Zip-symbolic.svg',
+  'data/icons/hicolor/symbolic/apps/io.github.michaelbrylevskii.Nautilus7Zip-symbolic.svg',
   install_dir: join_paths(datadir, 'icons', 'hicolor', 'symbolic', 'apps'),
 )
 

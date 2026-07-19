@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nautilus-7zip\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-19 01:22-0300\n"
+"POT-Creation-Date: 2026-07-19 01:45-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: data/io.github.nautilus_7zip.Nautilus7Zip.desktop.in:2
+#: data/io.github.michaelbrylevskii.Nautilus7Zip.desktop.in:2
 #: src/nautilus_7zip/application.py:969
 msgid "7-Zip for Nautilus"
 msgstr ""
 
-#: data/io.github.nautilus_7zip.Nautilus7Zip.desktop.in:3
+#: data/io.github.michaelbrylevskii.Nautilus7Zip.desktop.in:3
 msgid "Create and extract archives with 7-Zip"
 msgstr ""
 
