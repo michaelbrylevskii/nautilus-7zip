@@ -3,9 +3,24 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
 _PROGRESS_PATTERN = re.compile(r"(?<!\d)(100|[1-9]?\d)%")
 _ANSI_ESCAPE_PATTERN = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|[@-_])")
+_PROCESSED_ITEM_PATTERN = re.compile(r"(?m)^[+\-TU] ")
+_CREATE_TOTAL_PATTERN = re.compile(
+    r"Add new data to archive:\s+(\d+)\s+files?\b",
+    re.IGNORECASE,
+)
+_FINISHED_TOTAL_PATTERN = re.compile(r"(?m)^Files:\s+(\d+)\s*$", re.IGNORECASE)
+
+
+@dataclass(frozen=True, slots=True)
+class FileProgress:
+    """File-count information reported by one rendered 7-Zip output chunk."""
+
+    processed: int = 0
+    total: int | None = None
 
 
 def parse_progress(text: str) -> int | None:
@@ -13,6 +28,27 @@ def parse_progress(text: str) -> int | None:
 
     matches = _PROGRESS_PATTERN.findall(text)
     return int(matches[-1]) if matches else None
+
+
+def parse_file_progress(text: str) -> FileProgress:
+    """Parse processed-item lines and a trustworthy total when available."""
+
+    total_match = _CREATE_TOTAL_PATTERN.search(text) or _FINISHED_TOTAL_PATTERN.search(text)
+    return FileProgress(
+        processed=len(_PROCESSED_ITEM_PATTERN.findall(text)),
+        total=int(total_match.group(1)) if total_match is not None else None,
+    )
+
+
+def format_duration(seconds: float) -> str:
+    """Format a non-negative duration compactly for the progress window."""
+
+    value = max(0, int(seconds))
+    hours, remainder = divmod(value, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes}:{seconds:02d}"
 
 
 def render_terminal_output(text: str) -> str:

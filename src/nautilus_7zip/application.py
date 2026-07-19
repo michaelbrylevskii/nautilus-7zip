@@ -8,6 +8,7 @@ UI or backend failure cannot take down the file manager itself.
 from __future__ import annotations
 
 import os
+import time
 from collections import deque
 from pathlib import Path
 
@@ -35,6 +36,7 @@ from .paths import (
     suggested_archive_name,
     unique_path,
 )
+from .progress import format_duration, parse_file_progress
 from .runner import OperationHandle, RunResult, SubprocessRunner
 from .sizes import parse_binary_size
 
@@ -218,7 +220,7 @@ class CreateArchiveWindow(_FormWindow):
         paths: tuple[Path, ...],
         builder: SevenZipCommandBuilder,
     ) -> None:
-        super().__init__(application, title=_("Create Archive"), default_height=720)
+        super().__init__(application, title=_("Create Archive"), default_height=680)
         self.paths = paths
         self.builder = builder
 
@@ -229,7 +231,16 @@ class CreateArchiveWindow(_FormWindow):
             activates_default=True,
         )
         self.destination = self.create_path_row(_("Destination"), common_parent(paths))
-        self.format = _combo_row(_("Format"), ["7Z (.7z)", "ZIP (.zip)"])
+        self.format = _described_combo_row(
+            _("Format"),
+            [
+                ("7Z (.7z)", _("High compression; may require 7-Zip on other systems.")),
+                (
+                    "ZIP (.zip)",
+                    _("Widely compatible; AES-256 encryption may require 7-Zip."),
+                ),
+            ],
+        )
         self.format.connect("notify::selected", self._format_changed)
         self.level = _combo_row(
             _("Compression level"),
@@ -249,9 +260,16 @@ class CreateArchiveWindow(_FormWindow):
         archive_group.add(self.level)
         self.page.add(archive_group)
 
-        self.encryption_group = Adw.PreferencesGroup(title=_("Encryption"))
+        encryption_group = Adw.PreferencesGroup(title=_("Encryption"))
+        self.password_protection = Adw.ExpanderRow(
+            title=_("Password protection"),
+            subtitle=_("Encrypts archive contents with AES-256."),
+            show_enable_switch=True,
+            enable_expansion=False,
+            expanded=False,
+        )
         self.password = Adw.PasswordEntryRow(
-            title=_("Password (optional)"),
+            title=_("Password"),
             activates_default=True,
         )
         self.confirm_password = Adw.PasswordEntryRow(
@@ -262,10 +280,11 @@ class CreateArchiveWindow(_FormWindow):
             title=_("Encrypt file names"),
             subtitle=_("Hides file names until the password is entered."),
         )
-        self.encryption_group.add(self.password)
-        self.encryption_group.add(self.confirm_password)
-        self.encryption_group.add(self.encrypt_headers)
-        self.page.add(self.encryption_group)
+        self.password_protection.add_row(self.password)
+        self.password_protection.add_row(self.confirm_password)
+        self.password_protection.add_row(self.encrypt_headers)
+        encryption_group.add(self.password_protection)
+        self.page.add(encryption_group)
 
         options_group = Adw.PreferencesGroup(title=_("Options"))
         self.verify = Adw.SwitchRow(
@@ -310,37 +329,42 @@ class CreateArchiveWindow(_FormWindow):
             subtitle=_("Creates numbered .001, .002… files of the selected size."),
         )
         self.volume.connect("notify::selected", self._volume_changed)
-        self.custom_volume = Adw.EntryRow(
-            title=_("Custom volume size"),
-            text="1500M",
-            activates_default=True,
+        self.edit_custom_volume = Gtk.Button(
+            icon_name="document-edit-symbolic",
+            tooltip_text=_("Edit custom volume size"),
+            valign=Gtk.Align.CENTER,
             visible=False,
-            tooltip_text=_("Use an integer followed by M or G, for example 1500M or 4G."),
         )
+        self.edit_custom_volume.add_css_class("flat")
+        self.edit_custom_volume.connect("clicked", self._show_custom_volume_dialog)
+        self.volume.add_suffix(self.edit_custom_volume)
+        self._last_preset_volume = 0
+        self._custom_volume_value = 1500.0
+        self._custom_volume_unit = "MiB"
+        self._custom_volume_size = 1500 * 1024**2
+        self._custom_volume_dialog_open = False
         self.advanced.add_row(self.threads)
         self.advanced.add_row(self.solid_block)
         self.advanced.add_row(self.volume)
-        self.advanced.add_row(self.custom_volume)
         options_group.add(self.verify)
         options_group.add(self.advanced)
         self.page.add(options_group)
 
         self.create_button = self.add_primary_action(_("Create"), self._create)
-        for entry in (self.name, self.password, self.confirm_password, self.custom_volume):
+        for entry in (self.name, self.password, self.confirm_password):
             entry.connect("changed", self._validate_form)
         self.threads.connect("notify::selected", self._advanced_option_changed)
         self.solid_block.connect("notify::selected", self._advanced_option_changed)
         self.encrypt_headers.connect("notify::active", self._validate_form)
+        self.password_protection.connect(
+            "notify::enable-expansion",
+            self._password_protection_changed,
+        )
         self._format_changed(self.format, None)
         self._validate_form()
 
     def _format_changed(self, _combo: Adw.ComboRow, _param) -> None:
         is_7z = self._archive_format() is ArchiveFormat.SEVEN_ZIP
-        self.format.set_subtitle(
-            _("High compression and encrypted file names.")
-            if is_7z
-            else _("Compatible with most operating systems.")
-        )
         self.solid_block.set_visible(is_7z)
         self.encrypt_headers.set_visible(is_7z)
         if not is_7z:
@@ -349,8 +373,118 @@ class CreateArchiveWindow(_FormWindow):
         self._validate_form()
 
     def _volume_changed(self, _combo: Adw.ComboRow, _param) -> None:
-        self.custom_volume.set_visible(self._selected_volume() == _CUSTOM_VOLUME)
+        is_custom = self._selected_volume() == _CUSTOM_VOLUME
+        self.edit_custom_volume.set_visible(is_custom)
+        if is_custom:
+            self.volume.set_subtitle(
+                _("Custom size: {size} per volume.").format(
+                    size=self._custom_volume_display(),
+                )
+            )
+            if not self._custom_volume_dialog_open:
+                self._show_custom_volume_dialog()
+        else:
+            self._last_preset_volume = self.volume.get_selected()
+            self.volume.set_subtitle(
+                _("Creates numbered .001, .002… files of the selected size.")
+            )
         self._update_advanced_summary()
+        self._validate_form()
+
+    def _show_custom_volume_dialog(self, *_args) -> None:
+        if self._custom_volume_dialog_open:
+            return
+        self._custom_volume_dialog_open = True
+
+        dialog = Adw.AlertDialog(
+            heading=_("Custom Volume Size"),
+            body=_("Choose the maximum size of each numbered archive volume."),
+        )
+        dialog.set_content_width(420)
+        size = Adw.SpinRow(
+            title=_("Size"),
+            adjustment=Gtk.Adjustment(
+                value=self._custom_volume_value,
+                lower=0.01,
+                upper=1024 * 1024,
+                step_increment=1,
+                page_increment=100,
+            ),
+            digits=0 if self._custom_volume_unit == "MiB" else 2,
+            numeric=True,
+        )
+        unit = _combo_row(
+            _("Unit"),
+            ["MiB", "GiB"],
+            selected=0 if self._custom_volume_unit == "MiB" else 1,
+        )
+        self._dialog_previous_unit = self._custom_volume_unit
+        unit.connect("notify::selected", self._custom_volume_unit_changed, size)
+        group = Adw.PreferencesGroup()
+        group.add(size)
+        group.add(unit)
+        dialog.set_extra_child(group)
+        dialog.add_response("cancel", _("Cancel"))
+        dialog.add_response("apply", _("Apply"))
+        dialog.set_close_response("cancel")
+        dialog.set_default_response("apply")
+        dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
+        dialog.connect("response", self._custom_volume_response, size, unit)
+        dialog.present(self)
+
+    def _custom_volume_unit_changed(
+        self,
+        unit: Adw.ComboRow,
+        _param,
+        size: Adw.SpinRow,
+    ) -> None:
+        new_unit = "MiB" if unit.get_selected() == 0 else "GiB"
+        old_unit = self._dialog_previous_unit
+        if new_unit == old_unit:
+            return
+        old_multiplier = 1024**2 if old_unit == "MiB" else 1024**3
+        new_multiplier = 1024**2 if new_unit == "MiB" else 1024**3
+        converted = size.get_value() * old_multiplier / new_multiplier
+        size.set_digits(0 if new_unit == "MiB" else 2)
+        size.set_value(round(converted, 0 if new_unit == "MiB" else 2))
+        self._dialog_previous_unit = new_unit
+
+    def _custom_volume_response(
+        self,
+        _dialog: Adw.AlertDialog,
+        response: str,
+        size: Adw.SpinRow,
+        unit: Adw.ComboRow,
+    ) -> None:
+        self._custom_volume_dialog_open = False
+        if response != "apply":
+            self.volume.set_selected(self._last_preset_volume)
+            return
+        self._custom_volume_unit = "MiB" if unit.get_selected() == 0 else "GiB"
+        self._custom_volume_value = round(
+            size.get_value(),
+            0 if self._custom_volume_unit == "MiB" else 2,
+        )
+        self._custom_volume_size = parse_binary_size(
+            f"{self._custom_volume_value:g}{self._custom_volume_unit}"
+        )
+        self.volume.set_subtitle(
+            _("Custom size: {size} per volume.").format(
+                size=self._custom_volume_display(),
+            )
+        )
+        self._update_advanced_summary()
+
+    def _custom_volume_display(self) -> str:
+        return f"{self._custom_volume_value:g} {self._custom_volume_unit}"
+
+    def _password_protection_changed(self, row: Adw.ExpanderRow, _param) -> None:
+        enabled = row.get_enable_expansion()
+        row.set_expanded(enabled)
+        if not enabled:
+            self.password.set_text("")
+            self.confirm_password.set_text("")
+            self.encrypt_headers.set_active(False)
         self._validate_form()
 
     def _advanced_option_changed(self, _combo: Adw.ComboRow, _param) -> None:
@@ -366,7 +500,7 @@ class CreateArchiveWindow(_FormWindow):
         selected = self._selected_volume()
         if selected != _CUSTOM_VOLUME:
             return selected
-        return parse_binary_size(self.custom_volume.get_text())
+        return self._custom_volume_size
 
     def _update_advanced_summary(self) -> None:
         parts = [
@@ -384,8 +518,9 @@ class CreateArchiveWindow(_FormWindow):
         self.advanced.set_subtitle(" · ".join(parts))
 
     def _validate_form(self, *_args) -> None:
-        password = self.password.get_text()
-        confirm = self.confirm_password.get_text()
+        protection_enabled = self.password_protection.get_enable_expansion()
+        password = self.password.get_text() if protection_enabled else ""
+        confirm = self.confirm_password.get_text() if protection_enabled else ""
         passwords_match = password == confirm
         headers_valid = not self.encrypt_headers.get_active() or bool(password)
         if not passwords_match:
@@ -393,19 +528,12 @@ class CreateArchiveWindow(_FormWindow):
         elif not headers_valid:
             encryption_message = _("Enter a password to encrypt file names.")
         else:
-            encryption_message = ""
-        self.encryption_group.set_description(encryption_message)
-        volume_valid = True
-        if self._selected_volume() == _CUSTOM_VOLUME:
-            try:
-                parse_binary_size(self.custom_volume.get_text())
-            except ValueError:
-                volume_valid = False
+            encryption_message = _("Encrypts archive contents with AES-256.")
+        self.password_protection.set_subtitle(encryption_message)
         self.create_button.set_sensitive(
             bool(self.name.get_text().strip())
             and passwords_match
             and headers_valid
-            and volume_valid
         )
 
     def _create(self, _button: Gtk.Button) -> None:
@@ -419,15 +547,12 @@ class CreateArchiveWindow(_FormWindow):
             return
 
         archive_format = self._archive_format()
-        password = self.password.get_text() or None
-        if self.password.get_text() != self.confirm_password.get_text():
+        protection_enabled = self.password_protection.get_enable_expansion()
+        password = (self.password.get_text() or None) if protection_enabled else None
+        if protection_enabled and self.password.get_text() != self.confirm_password.get_text():
             self.show_error(_("Passwords do not match."))
             return
-        try:
-            volume_size = self._volume_size()
-        except ValueError:
-            self.show_error(_("Enter a valid volume size, for example 1500M or 4G."))
-            return
+        volume_size = self._volume_size()
         encrypt_headers = self.encrypt_headers.get_active()
         if encrypt_headers and not password:
             self.show_error(_("A password is required to encrypt file names."))
@@ -512,13 +637,35 @@ class ProgressWindow(Adw.ApplicationWindow):
 
     def __init__(self, application: Adw.Application, specs: list[CommandSpec]) -> None:
         super().__init__(application=application, title=_("7-Zip operation"))
-        self.set_default_size(680, 220)
+        self.set_default_size(700, 300)
         self._specs = deque(specs)
+        self._total_steps = len(specs)
+        self._current_step = 0
         self._handle: OperationHandle | None = None
         self._runner = SubprocessRunner(dispatcher=GLib.idle_add)
+        self._overall_started_at = 0.0
+        self._phase_started_at = 0.0
+        self._last_percent = 0
+        self._processed_items = 0
+        self._total_items: int | None = None
+        self._timer_id = 0
+        self._finished = False
+        self.connect("close-request", self._close_requested)
 
         toolbar = Adw.ToolbarView()
-        toolbar.add_top_bar(Adw.HeaderBar())
+        header = Adw.HeaderBar(
+            show_start_title_buttons=False,
+            show_end_title_buttons=False,
+        )
+        header.set_title_widget(Adw.WindowTitle(title=_("7-Zip operation")))
+        self.cancel_button = Gtk.Button(label=_("Cancel"))
+        self.cancel_button.connect("clicked", self._cancel)
+        header.pack_start(self.cancel_button)
+        self.close_button = Gtk.Button(label=_("Close"), visible=False)
+        self.close_button.add_css_class("suggested-action")
+        self.close_button.connect("clicked", lambda _button: self.close())
+        header.pack_end(self.close_button)
+        toolbar.add_top_bar(header)
         content = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=16,
@@ -527,9 +674,12 @@ class ProgressWindow(Adw.ApplicationWindow):
             margin_start=20,
             margin_end=20,
         )
-        self.status = Gtk.Label(xalign=0)
+        self.status = Gtk.Label(xalign=0, wrap=True)
         self.status.add_css_class("title-3")
         self.progress = Gtk.ProgressBar(show_text=True)
+        self.statistics = Gtk.Label(xalign=0)
+        self.statistics.add_css_class("dim-label")
+        self.statistics.add_css_class("caption")
         self.log = Gtk.TextView(editable=False, monospace=True, cursor_visible=False)
         self.log.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         self.log.set_left_margin(8)
@@ -545,20 +695,14 @@ class ProgressWindow(Adw.ApplicationWindow):
         self.details.set_vexpand(True)
         content.append(self.status)
         content.append(self.progress)
+        content.append(self.statistics)
         content.append(self.details)
-
-        controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8, halign=Gtk.Align.END)
-        self.cancel_button = Gtk.Button(label=_("Cancel"))
-        self.cancel_button.connect("clicked", self._cancel)
-        self.close_button = Gtk.Button(label=_("Close"), sensitive=False)
-        self.close_button.connect("clicked", lambda _button: self.close())
-        controls.append(self.cancel_button)
-        controls.append(self.close_button)
-        content.append(controls)
         toolbar.set_content(content)
         self.set_content(toolbar)
 
     def start(self) -> None:
+        self._overall_started_at = time.monotonic()
+        self._timer_id = GLib.timeout_add_seconds(1, self._refresh_statistics)
         self.present()
         self._run_next()
 
@@ -570,9 +714,15 @@ class ProgressWindow(Adw.ApplicationWindow):
             self._finish()
             return
         spec = self._specs.popleft()
+        self._current_step += 1
+        self._phase_started_at = time.monotonic()
+        self._last_percent = 0
+        self._processed_items = 0
+        self._total_items = None
         self.status.set_label(spec.title)
         self.progress.set_fraction(0.0)
         self.progress.set_text("")
+        self._refresh_statistics()
         self._handle = self._runner.start(
             spec,
             on_output=self._append_output,
@@ -581,6 +731,12 @@ class ProgressWindow(Adw.ApplicationWindow):
         )
 
     def _append_output(self, text: str) -> None:
+        file_progress = parse_file_progress(text)
+        self._processed_items += file_progress.processed
+        if file_progress.total is not None:
+            self._total_items = file_progress.total
+        if file_progress.processed or file_progress.total is not None:
+            self._refresh_statistics()
         buffer = self.log.get_buffer()
         buffer.insert(buffer.get_end_iter(), text)
         overflow = buffer.get_char_count() - self._MAX_LOG_CHARS
@@ -591,10 +747,52 @@ class ProgressWindow(Adw.ApplicationWindow):
         buffer.delete_mark(mark)
 
     def _set_progress(self, percent: int) -> None:
+        self._last_percent = percent
         self.progress.set_fraction(percent / 100)
         self.progress.set_text(f"{percent}%")
+        self._refresh_statistics()
+
+    def _refresh_statistics(self) -> bool:
+        if not self._overall_started_at:
+            return GLib.SOURCE_CONTINUE
+        now = time.monotonic()
+        parts = [
+            _("Elapsed {duration}").format(
+                duration=format_duration(now - self._overall_started_at),
+            )
+        ]
+        if self._total_steps > 1 and self._current_step:
+            parts.append(
+                _("Step {current}/{total}").format(
+                    current=self._current_step,
+                    total=self._total_steps,
+                )
+            )
+        if self._processed_items:
+            if self._total_items is not None and self._processed_items <= self._total_items:
+                parts.append(
+                    _("Items {current}/{total}").format(
+                        current=self._processed_items,
+                        total=self._total_items,
+                    )
+                )
+            else:
+                parts.append(
+                    _("Items processed: {count}").format(count=self._processed_items)
+                )
+        phase_elapsed = now - self._phase_started_at
+        if 0 < self._last_percent < 100 and phase_elapsed >= 3:
+            remaining = phase_elapsed * (100 - self._last_percent) / self._last_percent
+            parts.append(
+                _("About {duration} remaining").format(
+                    duration=format_duration(remaining),
+                )
+            )
+        self.statistics.set_label(" · ".join(parts))
+        return GLib.SOURCE_REMOVE if self._finished else GLib.SOURCE_CONTINUE
 
     def _completed(self, result: RunResult) -> None:
+        self._handle = None
         if result.succeeded:
             self._run_next()
             return
@@ -615,9 +813,65 @@ class ProgressWindow(Adw.ApplicationWindow):
         self.cancel_button.set_sensitive(False)
         self.status.set_label(_("Cancelling…"))
 
+    def _close_requested(self, _window: Adw.ApplicationWindow) -> bool:
+        if self._finished:
+            return False
+        self._cancel(self.cancel_button)
+        return True
+
     def _finish(self) -> None:
+        self._finished = True
+        if self._timer_id:
+            GLib.source_remove(self._timer_id)
+            self._timer_id = 0
+        self._refresh_statistics()
         self.cancel_button.set_visible(False)
-        self.close_button.set_sensitive(True)
+        self.close_button.set_visible(True)
+        self.set_default_widget(self.close_button)
+
+
+def _described_combo_row(
+    title: str,
+    options: list[tuple[str, str]],
+) -> Adw.ComboRow:
+    row = _combo_row(title, [label for label, _description in options])
+    descriptions = [description for _label, description in options]
+    factory = Gtk.SignalListItemFactory()
+
+    def setup(_factory: Gtk.SignalListItemFactory, list_item: Gtk.ListItem) -> None:
+        box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=2,
+            margin_top=6,
+            margin_bottom=6,
+            margin_start=2,
+            margin_end=12,
+        )
+        primary = Gtk.Label(xalign=0)
+        secondary = Gtk.Label(xalign=0, wrap=True, max_width_chars=48)
+        secondary.add_css_class("dim-label")
+        secondary.add_css_class("caption")
+        box.append(primary)
+        box.append(secondary)
+        list_item.set_child(box)
+
+    def bind(_factory: Gtk.SignalListItemFactory, list_item: Gtk.ListItem) -> None:
+        box = list_item.get_child()
+        item = list_item.get_item()
+        if not isinstance(box, Gtk.Box) or not isinstance(item, Gtk.StringObject):
+            return
+        primary = box.get_first_child()
+        secondary = primary.get_next_sibling() if primary is not None else None
+        if isinstance(primary, Gtk.Label):
+            primary.set_label(item.get_string())
+        position = list_item.get_position()
+        if isinstance(secondary, Gtk.Label) and position < len(descriptions):
+            secondary.set_label(descriptions[position])
+
+    factory.connect("setup", setup)
+    factory.connect("bind", bind)
+    row.set_list_factory(factory)
+    return row
 
 
 def _combo_row(

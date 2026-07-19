@@ -21,7 +21,7 @@ built-in **Compress…** action and does not bundle an archiving engine.
 - Compression level, CPU thread, solid-block, destination, and archive name controls.
 - Optional multi-volume output with presets and custom binary sizes.
 - AES-256 password protection; 7z header encryption is supported.
-- Password confirmation and inline validation before archive creation.
+- Optional, collapsed password protection with confirmation and inline validation.
 - **Extract…**, **Extract here**, and **Extract to `<name>/`** actions.
 - Configurable overwrite behavior during extraction.
 - Archive integrity testing.
@@ -55,7 +55,9 @@ test. The 7z action uses automatic solid-block sizing; the ZIP action uses
 Deflate. The output is placed beside the selection, and an incrementing suffix
 is added rather than overwriting an existing archive.
 
-During an operation, the window shows its status and progress bar. Detailed
+During an operation, the window shows its status, progress bar, elapsed time,
+an approximate remaining time when enough progress is known, and a best-effort
+item count. Header-bar actions keep cancellation and closing compact. Detailed
 7-Zip output is available under the collapsed **Details** section and opens
 automatically if the operation fails.
 
@@ -67,8 +69,12 @@ contains:
 
 - automatic or explicit CPU thread counts;
 - automatic, non-solid, 256 MiB, 1 GiB, 4 GiB, and fully solid 7z blocks;
-- single-file output, common volume-size presets, and custom values such as
-  `1500M` or `4G`.
+- single-file output, common volume-size presets, and a compact custom-size
+  dialog with explicit MiB/GiB units.
+
+The format picker describes each format inside its drop-down list. Password
+protection stays collapsed and disabled until explicitly enabled; 7z archives
+can additionally encrypt file names.
 
 Split archives are written as numbered files such as `backup.7z.001` and
 `backup.7z.002`. Test and extract operations must start with `.001`. The

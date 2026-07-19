@@ -1,6 +1,12 @@
 import pytest
 
-from nautilus_7zip.progress import parse_progress, render_terminal_output
+from nautilus_7zip.progress import (
+    FileProgress,
+    format_duration,
+    parse_file_progress,
+    parse_progress,
+    render_terminal_output,
+)
 
 
 @pytest.mark.parametrize(
@@ -40,3 +46,36 @@ def test_parse_progress(text: str, expected: int | None) -> None:
 )
 def test_render_terminal_output(text: str, expected: str) -> None:
     assert render_terminal_output(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("+ first\n+ second\n", FileProgress(processed=2)),
+        ("- first\nT second\nU third\n", FileProgress(processed=3)),
+        (
+            "Add new data to archive: 2915 files, 20 GiB\n",
+            FileProgress(total=2915),
+        ),
+        ("Add new data to archive: 1 file, 10 bytes\n", FileProgress(total=1)),
+        ("Files: 42\n", FileProgress(total=42)),
+        ("Scanning the drive: 8 files\n", FileProgress()),
+        ("plain output\n", FileProgress()),
+    ],
+)
+def test_parse_file_progress(text: str, expected: FileProgress) -> None:
+    assert parse_file_progress(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("seconds", "expected"),
+    [
+        (-1, "0:00"),
+        (0, "0:00"),
+        (9.9, "0:09"),
+        (65, "1:05"),
+        (3661, "1:01:01"),
+    ],
+)
+def test_format_duration(seconds: float, expected: str) -> None:
+    assert format_duration(seconds) == expected

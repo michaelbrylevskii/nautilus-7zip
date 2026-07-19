@@ -97,8 +97,14 @@ Keep option validation and command generation independent of GTK:
   concise row subtitles instead of adding question-mark buttons.
 - Display creation formats with their suffixes (`7Z (.7z)`, `ZIP (.zip)`), but
   keep the editable archive name suffix-free by default.
+- Put concise format descriptions inside the format drop-down list. Keep
+  password protection disabled and collapsed until the user explicitly enables
+  it. Collect custom volume sizes in a compact dialog with explicit units.
 - A split archive is tested and extracted through its first `.001` volume.
   Detect output collisions against that first volume before starting 7-Zip.
+- Keep progress actions in the header bar. Show elapsed time unconditionally;
+  only show approximate remaining time and item totals when 7-Zip has reported
+  enough trustworthy information, and label estimates as approximate.
 
 ## Testing requirements
 
@@ -147,6 +153,8 @@ Implemented:
   password confirmation, header encryption, and output;
 - extraction destination and overwrite policy;
 - integrity testing, progress, cancellation, and bounded, collapsible logs;
+- compact progress header actions plus elapsed, approximate remaining, step,
+  and best-effort item statistics;
 - terminal-style rendering of 7-Zip backspace output for the GTK details view;
 - stdin password transport;
 - Meson installation, gettext scaffolding, complete Russian catalog;

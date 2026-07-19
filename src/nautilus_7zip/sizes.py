@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import re
+from decimal import ROUND_HALF_UP, Decimal
 
-_SIZE_PATTERN = re.compile(r"^\s*(\d+)\s*(b|k|kb|kib|m|mb|mib|g|gb|gib)\s*$", re.I)
+_SIZE_PATTERN = re.compile(
+    r"^\s*(\d+(?:\.\d+)?)\s*(b|k|kb|kib|m|mb|mib|g|gb|gib)\s*$",
+    re.I,
+)
 _UNIT_MULTIPLIERS = {
     "b": 1,
     "k": 1024,
@@ -20,12 +24,13 @@ _UNIT_MULTIPLIERS = {
 
 
 def parse_binary_size(text: str) -> int:
-    """Parse an integer size such as ``700M`` or ``2 GiB`` into bytes."""
+    """Parse a size such as ``700M`` or ``1.5 GiB`` into whole bytes."""
 
     match = _SIZE_PATTERN.fullmatch(text)
     if match is None:
-        raise ValueError("Invalid size; use an integer followed by M or G")
-    value = int(match.group(1))
-    if value < 1:
+        raise ValueError("Invalid size; use a positive number followed by a unit")
+    value = Decimal(match.group(1))
+    if value <= 0:
         raise ValueError("Volume size must be positive")
-    return value * _UNIT_MULTIPLIERS[match.group(2).casefold()]
+    bytes_value = value * _UNIT_MULTIPLIERS[match.group(2).casefold()]
+    return int(bytes_value.to_integral_value(rounding=ROUND_HALF_UP))
