@@ -26,6 +26,7 @@ python.install_sources(
     'src/nautilus_7zip/progress.py',
     'src/nautilus_7zip/runner.py',
     'src/nautilus_7zip/selection.py',
+    'src/nautilus_7zip/sizes.py',
   ),
   subdir: 'nautilus_7zip',
 )

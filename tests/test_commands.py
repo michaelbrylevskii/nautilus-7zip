@@ -10,6 +10,7 @@ from nautilus_7zip.models import (
     ExtractOptions,
     IntegrityTestOptions,
     OverwriteMode,
+    SolidBlock,
 )
 
 
@@ -60,7 +61,7 @@ def test_build_encrypted_7z_command_keeps_secret_out_of_argv() -> None:
             Path("archive"),
             level=CompressionLevel.ULTRA,
             threads=8,
-            solid=False,
+            solid_block=SolidBlock.NON_SOLID,
             password="correct horse battery staple",
             encrypt_headers=True,
         )
@@ -81,7 +82,7 @@ def test_build_encrypted_zip_command() -> None:
             Path("archive.zip"),
             archive_format=ArchiveFormat.ZIP,
             password="secret",
-            solid=False,
+            solid_block=None,
         )
     )
     assert "-tzip" in spec.argv
@@ -90,6 +91,32 @@ def test_build_encrypted_zip_command() -> None:
     assert "-ms=off" not in spec.argv
     assert "-p" in spec.argv
     assert spec.stdin_text == "secret\n"
+
+
+@pytest.mark.parametrize(
+    ("block", "switch"),
+    [
+        (SolidBlock.AUTO, "-ms=on"),
+        (SolidBlock.NON_SOLID, "-ms=off"),
+        (SolidBlock.MIB_256, "-ms=256m"),
+        (SolidBlock.GIB_1, "-ms=1g"),
+        (SolidBlock.GIB_4, "-ms=4g"),
+        (SolidBlock.FULL, "-ms=18446744073709551615b"),
+    ],
+)
+def test_build_solid_block_switch(block: SolidBlock, switch: str) -> None:
+    spec = SevenZipCommandBuilder().create(
+        CreateOptions((Path("source"),), Path("archive"), solid_block=block)
+    )
+    assert switch in spec.argv
+
+
+def test_build_volume_command_uses_explicit_bytes() -> None:
+    spec = SevenZipCommandBuilder().create(
+        CreateOptions((Path("source"),), Path("archive"), volume_size=734_003_200)
+    )
+    assert "-v734003200b" in spec.argv
+    assert "archive.7z" in spec.argv
 
 
 def test_build_extract_command_with_password() -> None:

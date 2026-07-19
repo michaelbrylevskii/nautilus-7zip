@@ -6,6 +6,8 @@ from collections.abc import Iterable
 from pathlib import Path
 
 ARCHIVE_SUFFIXES = (
+    ".7z.001",
+    ".zip.001",
     ".7z",
     ".zip",
     ".rar",
@@ -80,3 +82,11 @@ def unique_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
+
+
+def output_path_exists(path: Path, *, split: bool) -> bool:
+    """Return whether a regular archive or the first requested volume exists."""
+
+    if path.exists():
+        return True
+    return split and path.with_name(path.name + ".001").exists()

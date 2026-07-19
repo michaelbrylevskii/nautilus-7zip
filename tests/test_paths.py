@@ -6,6 +6,7 @@ from nautilus_7zip.paths import (
     archive_stem,
     common_parent,
     is_archive,
+    output_path_exists,
     suggested_archive_name,
     unique_path,
 )
@@ -13,7 +14,15 @@ from nautilus_7zip.paths import (
 
 @pytest.mark.parametrize(
     "name",
-    ["backup.7z", "DATA.ZIP", "source.tar.gz", "image.iso", "logs.tar.zst"],
+    [
+        "backup.7z",
+        "DATA.ZIP",
+        "source.tar.gz",
+        "image.iso",
+        "logs.tar.zst",
+        "backup.7z.001",
+        "BACKUP.ZIP.001",
+    ],
 )
 def test_archive_detection(name: str) -> None:
     assert is_archive(Path(name))
@@ -28,6 +37,8 @@ def test_non_archive_detection() -> None:
     [
         ("source.tar.gz", "source"),
         ("BACKUP.7Z", "BACKUP"),
+        ("backup.7z.001", "backup"),
+        ("BACKUP.ZIP.001", "BACKUP"),
         ("document.txt", "document"),
         (".zip", "Archive"),
     ],
@@ -77,3 +88,19 @@ def test_unique_path_without_suffix(tmp_path: Path) -> None:
     original = tmp_path / "output"
     original.mkdir()
     assert unique_path(original) == tmp_path / "output (1)"
+
+
+def test_output_path_exists_checks_first_volume(tmp_path: Path) -> None:
+    archive = tmp_path / "backup.7z"
+    assert not output_path_exists(archive, split=False)
+    assert not output_path_exists(archive, split=True)
+    (tmp_path / "backup.7z.001").touch()
+    assert not output_path_exists(archive, split=False)
+    assert output_path_exists(archive, split=True)
+
+
+def test_output_path_exists_checks_regular_archive(tmp_path: Path) -> None:
+    archive = tmp_path / "backup.zip"
+    archive.touch()
+    assert output_path_exists(archive, split=False)
+    assert output_path_exists(archive, split=True)

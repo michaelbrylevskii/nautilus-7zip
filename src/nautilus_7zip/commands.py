@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from .models import ArchiveFormat, CreateOptions, ExtractOptions, IntegrityTestOptions
 
@@ -32,7 +31,7 @@ class SevenZipCommandBuilder:
         self.executable = executable
 
     def create(self, options: CreateOptions) -> CommandSpec:
-        output = _with_expected_suffix(options.output, options.archive_format)
+        output = options.archive_path
         args = [
             self.executable,
             "a",
@@ -43,9 +42,14 @@ class SevenZipCommandBuilder:
         ]
 
         if options.archive_format is ArchiveFormat.SEVEN_ZIP:
-            args.append("-ms=on" if options.solid else "-ms=off")
+            if options.solid_block is None:  # pragma: no cover - guarded by CreateOptions
+                raise ValueError("7z creation requires a solid-block mode")
+            args.append(f"-ms={options.solid_block.value}")
         else:
             args.append("-mm=Deflate")
+
+        if options.volume_size is not None:
+            args.append(f"-v{options.volume_size}b")
 
         stdin_text = _append_password_options(
             args,
@@ -74,14 +78,6 @@ class SevenZipCommandBuilder:
         stdin_text = _append_password_options(args, options.password)
         args.extend(("--", str(options.archive)))
         return CommandSpec(tuple(args), stdin_text, f"Test {options.archive.name}")
-
-
-def _with_expected_suffix(output: Path, archive_format: ArchiveFormat) -> Path:
-    if output.name.lower().endswith(archive_format.suffix):
-        return output
-    return output.with_name(output.name + archive_format.suffix)
-
-
 def _append_password_options(
     args: list[str],
     password: str | None,

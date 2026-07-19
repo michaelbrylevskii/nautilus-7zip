@@ -29,6 +29,17 @@ class CompressionLevel(IntEnum):
     ULTRA = 9
 
 
+class SolidBlock(StrEnum):
+    """7z solid-block modes exposed by the creation UI."""
+
+    AUTO = "on"
+    NON_SOLID = "off"
+    MIB_256 = "256m"
+    GIB_1 = "1g"
+    GIB_4 = "4g"
+    FULL = "18446744073709551615b"
+
+
 class OverwriteMode(StrEnum):
     """7-Zip overwrite policies used during extraction."""
 
@@ -46,7 +57,8 @@ class CreateOptions:
     archive_format: ArchiveFormat = ArchiveFormat.SEVEN_ZIP
     level: CompressionLevel = CompressionLevel.NORMAL
     threads: int | None = None
-    solid: bool = True
+    solid_block: SolidBlock | None = SolidBlock.AUTO
+    volume_size: int | None = None
     password: str | None = None
     encrypt_headers: bool = False
     verify: bool = False
@@ -56,10 +68,31 @@ class CreateOptions:
             raise ValueError("At least one source is required")
         if self.threads is not None and self.threads < 1:
             raise ValueError("Thread count must be positive or None")
+        if self.volume_size is not None and self.volume_size < 1:
+            raise ValueError("Volume size must be positive or None")
+        if self.archive_format is not ArchiveFormat.SEVEN_ZIP and self.solid_block is not None:
+            raise ValueError("Solid blocks are only supported by the 7z format")
         if self.encrypt_headers and self.archive_format is not ArchiveFormat.SEVEN_ZIP:
             raise ValueError("Header encryption is only supported by the 7z format")
         if self.encrypt_headers and not self.password:
             raise ValueError("Header encryption requires a password")
+
+    @property
+    def archive_path(self) -> Path:
+        """Return the final archive name including its expected suffix."""
+
+        if self.output.name.casefold().endswith(self.archive_format.suffix):
+            return self.output
+        return self.output.with_name(self.output.name + self.archive_format.suffix)
+
+    @property
+    def verification_path(self) -> Path:
+        """Return the path 7-Zip must open to test the resulting archive."""
+
+        archive = self.archive_path
+        if self.volume_size is None:
+            return archive
+        return archive.with_name(archive.name + ".001")
 
 
 @dataclass(frozen=True, slots=True)

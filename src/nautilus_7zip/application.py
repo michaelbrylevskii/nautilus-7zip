@@ -7,6 +7,7 @@ UI or backend failure cannot take down the file manager itself.
 
 from __future__ import annotations
 
+import os
 from collections import deque
 from pathlib import Path
 
@@ -25,11 +26,51 @@ from .models import (
     ExtractOptions,
     IntegrityTestOptions,
     OverwriteMode,
+    SolidBlock,
 )
-from .paths import archive_stem, common_parent, suggested_archive_name, unique_path
+from .paths import (
+    archive_stem,
+    common_parent,
+    output_path_exists,
+    suggested_archive_name,
+    unique_path,
+)
 from .runner import OperationHandle, RunResult, SubprocessRunner
+from .sizes import parse_binary_size
 
 APP_ID = "io.github.nautilus_7zip.Nautilus7Zip"
+
+_FORMATS = (ArchiveFormat.SEVEN_ZIP, ArchiveFormat.ZIP)
+_LEVELS = (
+    CompressionLevel.STORE,
+    CompressionLevel.FASTEST,
+    CompressionLevel.FAST,
+    CompressionLevel.NORMAL,
+    CompressionLevel.MAXIMUM,
+    CompressionLevel.ULTRA,
+)
+_SOLID_BLOCKS = (
+    SolidBlock.AUTO,
+    SolidBlock.NON_SOLID,
+    SolidBlock.MIB_256,
+    SolidBlock.GIB_1,
+    SolidBlock.GIB_4,
+    SolidBlock.FULL,
+)
+_CUSTOM_VOLUME = -1
+_VOLUME_SIZES = (
+    None,
+    100 * 1024**2,
+    700 * 1024**2,
+    2 * 1024**3,
+    4095 * 1024**2,
+    _CUSTOM_VOLUME,
+)
+_OVERWRITE_MODES = (
+    OverwriteMode.AUTO_RENAME,
+    OverwriteMode.OVERWRITE,
+    OverwriteMode.SKIP,
+)
 
 
 class NautilusSevenZipApplication(Adw.Application):
@@ -79,48 +120,61 @@ class NautilusSevenZipApplication(Adw.Application):
             output,
             archive_format=archive_format,
             level=CompressionLevel.NORMAL,
-            solid=archive_format is ArchiveFormat.SEVEN_ZIP,
+            solid_block=(SolidBlock.AUTO if archive_format is ArchiveFormat.SEVEN_ZIP else None),
         )
         _present_progress(self, [self.builder.create(options)])
 
 
 class _FormWindow(Adw.ApplicationWindow):
-    def __init__(self, application: Adw.Application, *, title: str) -> None:
+    def __init__(
+        self,
+        application: Adw.Application,
+        *,
+        title: str,
+        default_height: int,
+    ) -> None:
         super().__init__(application=application, title=title)
-        self.set_default_size(680, -1)
 
         toolbar = Adw.ToolbarView()
-        toolbar.add_top_bar(Adw.HeaderBar())
-        self.form = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            spacing=18,
-            margin_top=24,
-            margin_bottom=24,
-            margin_start=24,
-            margin_end=24,
+        self.header = Adw.HeaderBar(
+            show_start_title_buttons=False,
+            show_end_title_buttons=False,
         )
-        scroller = Gtk.ScrolledWindow(child=self.form)
-        scroller.set_propagate_natural_height(True)
-        toolbar.set_content(scroller)
+        self.header.set_title_widget(Adw.WindowTitle(title=title))
+        cancel = Gtk.Button(label=_("Cancel"))
+        cancel.connect("clicked", lambda _button: self.close())
+        self.header.pack_start(cancel)
+        toolbar.add_top_bar(self.header)
+
+        self.page = Adw.PreferencesPage()
+        toolbar.set_content(self.page)
         self.set_content(toolbar)
+        # Set the initial size after attaching the adaptive content. This keeps
+        # the full collapsed form visible while PreferencesPage still provides
+        # scrolling when the monitor cannot accommodate it.
+        self.set_default_size(660, default_height)
 
-    def add_field(self, label: str, widget: Gtk.Widget) -> None:
-        caption = Gtk.Label(label=label, xalign=0)
-        caption.add_css_class("heading")
-        self.form.append(caption)
-        self.form.append(widget)
+    def add_primary_action(self, label: str, callback) -> Gtk.Button:
+        button = Gtk.Button(label=label)
+        button.add_css_class("suggested-action")
+        button.connect("clicked", callback)
+        self.header.pack_end(button)
+        self.set_default_widget(button)
+        return button
 
-    def add_path_field(self, label: str, initial: Path) -> Gtk.Entry:
-        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        entry = Gtk.Entry(text=str(initial), hexpand=True)
-        browse = Gtk.Button(label=_("Browse…"))
+    def create_path_row(self, label: str, initial: Path) -> Adw.EntryRow:
+        entry = Adw.EntryRow(title=label, text=str(initial), activates_default=True)
+        browse = Gtk.Button(
+            icon_name="folder-open-symbolic",
+            tooltip_text=_("Choose a folder"),
+            valign=Gtk.Align.CENTER,
+        )
+        browse.add_css_class("flat")
         browse.connect("clicked", self._choose_folder, entry)
-        row.append(entry)
-        row.append(browse)
-        self.add_field(label, row)
+        entry.add_suffix(browse)
         return entry
 
-    def _choose_folder(self, _button: Gtk.Button, entry: Gtk.Entry) -> None:
+    def _choose_folder(self, _button: Gtk.Button, entry: Adw.EntryRow) -> None:
         dialog = Gtk.FileDialog(title=_("Select a folder"), modal=True)
         current = Path(entry.get_text()).expanduser()
         if current.is_dir():
@@ -131,7 +185,7 @@ class _FormWindow(Adw.ApplicationWindow):
         self,
         dialog: Gtk.FileDialog,
         result: Gio.AsyncResult,
-        entry: Gtk.Entry,
+        entry: Adw.EntryRow,
     ) -> None:
         try:
             selected = dialog.select_folder_finish(result)
@@ -164,57 +218,195 @@ class CreateArchiveWindow(_FormWindow):
         paths: tuple[Path, ...],
         builder: SevenZipCommandBuilder,
     ) -> None:
-        super().__init__(application, title=_("Create archive"))
+        super().__init__(application, title=_("Create Archive"), default_height=720)
         self.paths = paths
         self.builder = builder
 
-        self.destination = self.add_path_field(_("Destination"), common_parent(paths))
-        self.name = Gtk.Entry(text=suggested_archive_name(paths), hexpand=True)
-        self.add_field(_("Archive name"), self.name)
+        archive_group = Adw.PreferencesGroup(title=_("Archive"))
+        self.name = Adw.EntryRow(
+            title=_("Archive name"),
+            text=suggested_archive_name(paths),
+            activates_default=True,
+        )
+        self.destination = self.create_path_row(_("Destination"), common_parent(paths))
+        self.format = _combo_row(_("Format"), ["7Z (.7z)", "ZIP (.zip)"])
+        self.format.connect("notify::selected", self._format_changed)
+        self.level = _combo_row(
+            _("Compression level"),
+            [
+                _("Store (no compression)"),
+                _("Fastest"),
+                _("Fast"),
+                _("Normal"),
+                _("Maximum"),
+                _("Ultra"),
+            ],
+            selected=_LEVELS.index(CompressionLevel.NORMAL),
+        )
+        archive_group.add(self.name)
+        archive_group.add(self.destination)
+        archive_group.add(self.format)
+        archive_group.add(self.level)
+        self.page.add(archive_group)
 
-        self.format = Gtk.ComboBoxText()
-        self.format.append(ArchiveFormat.SEVEN_ZIP.value, "7z")
-        self.format.append(ArchiveFormat.ZIP.value, "ZIP")
-        self.format.set_active_id(ArchiveFormat.SEVEN_ZIP.value)
-        self.format.connect("changed", self._format_changed)
-        self.add_field(_("Format"), self.format)
+        self.encryption_group = Adw.PreferencesGroup(title=_("Encryption"))
+        self.password = Adw.PasswordEntryRow(
+            title=_("Password (optional)"),
+            activates_default=True,
+        )
+        self.confirm_password = Adw.PasswordEntryRow(
+            title=_("Confirm password"),
+            activates_default=True,
+        )
+        self.encrypt_headers = Adw.SwitchRow(
+            title=_("Encrypt file names"),
+            subtitle=_("Hides file names until the password is entered."),
+        )
+        self.encryption_group.add(self.password)
+        self.encryption_group.add(self.confirm_password)
+        self.encryption_group.add(self.encrypt_headers)
+        self.page.add(self.encryption_group)
 
-        self.level = Gtk.ComboBoxText()
-        for level, label in (
-            (CompressionLevel.STORE, _("Store (no compression)")),
-            (CompressionLevel.FASTEST, _("Fastest")),
-            (CompressionLevel.FAST, _("Fast")),
-            (CompressionLevel.NORMAL, _("Normal")),
-            (CompressionLevel.MAXIMUM, _("Maximum")),
-            (CompressionLevel.ULTRA, _("Ultra")),
-        ):
-            self.level.append(str(int(level)), label)
-        self.level.set_active_id(str(int(CompressionLevel.NORMAL)))
-        self.add_field(_("Compression level"), self.level)
+        options_group = Adw.PreferencesGroup(title=_("Options"))
+        self.verify = Adw.SwitchRow(
+            title=_("Verify after creation"),
+            subtitle=_("Tests archive integrity when compression finishes."),
+            active=True,
+        )
+        self.advanced = Adw.ExpanderRow(title=_("Advanced Options"))
+        hardware_threads = max(1, os.cpu_count() or 1)
+        self.threads = _combo_row(
+            _("CPU threads"),
+            [
+                _("Auto ({count})").format(count=hardware_threads),
+                *map(str, range(1, hardware_threads + 1)),
+            ],
+            subtitle=_("Limits CPU usage. Auto uses available processors."),
+        )
+        self.solid_block = _combo_row(
+            _("Solid block"),
+            [
+                _("Auto — Recommended"),
+                _("Non-solid"),
+                "256 MiB",
+                "1 GiB",
+                "4 GiB",
+                _("Fully solid"),
+            ],
+            subtitle=_(
+                "Larger blocks can compress better but make individual files slower to extract."
+            ),
+        )
+        self.volume = _combo_row(
+            _("Split into volumes"),
+            [
+                _("None — Single archive"),
+                "100 MiB",
+                "700 MiB",
+                "2 GiB",
+                _("4095 MiB — FAT32 compatible"),
+                _("Custom…"),
+            ],
+            subtitle=_("Creates numbered .001, .002… files of the selected size."),
+        )
+        self.volume.connect("notify::selected", self._volume_changed)
+        self.custom_volume = Adw.EntryRow(
+            title=_("Custom volume size"),
+            text="1500M",
+            activates_default=True,
+            visible=False,
+            tooltip_text=_("Use an integer followed by M or G, for example 1500M or 4G."),
+        )
+        self.advanced.add_row(self.threads)
+        self.advanced.add_row(self.solid_block)
+        self.advanced.add_row(self.volume)
+        self.advanced.add_row(self.custom_volume)
+        options_group.add(self.verify)
+        options_group.add(self.advanced)
+        self.page.add(options_group)
 
-        self.password = Gtk.PasswordEntry(show_peek_icon=True)
-        self.add_field(_("Password (optional)"), self.password)
+        self.create_button = self.add_primary_action(_("Create"), self._create)
+        for entry in (self.name, self.password, self.confirm_password, self.custom_volume):
+            entry.connect("changed", self._validate_form)
+        self.threads.connect("notify::selected", self._advanced_option_changed)
+        self.solid_block.connect("notify::selected", self._advanced_option_changed)
+        self.encrypt_headers.connect("notify::active", self._validate_form)
+        self._format_changed(self.format, None)
+        self._validate_form()
 
-        switches = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.solid = _switch_row(_("Solid archive"), True)
-        self.encrypt_headers = _switch_row(_("Encrypt file names"), False)
-        self.verify = _switch_row(_("Test archive after creation"), True)
-        switches.append(self.solid)
-        switches.append(self.encrypt_headers)
-        switches.append(self.verify)
-        self.add_field(_("Options"), switches)
-
-        create = Gtk.Button(label=_("Create archive"), halign=Gtk.Align.END)
-        create.add_css_class("suggested-action")
-        create.connect("clicked", self._create)
-        self.form.append(create)
-
-    def _format_changed(self, _combo: Gtk.ComboBoxText) -> None:
-        is_7z = self.format.get_active_id() == ArchiveFormat.SEVEN_ZIP.value
-        self.solid.set_sensitive(is_7z)
-        self.encrypt_headers.set_sensitive(is_7z)
+    def _format_changed(self, _combo: Adw.ComboRow, _param) -> None:
+        is_7z = self._archive_format() is ArchiveFormat.SEVEN_ZIP
+        self.format.set_subtitle(
+            _("High compression and encrypted file names.")
+            if is_7z
+            else _("Compatible with most operating systems.")
+        )
+        self.solid_block.set_visible(is_7z)
+        self.encrypt_headers.set_visible(is_7z)
         if not is_7z:
-            _row_switch(self.encrypt_headers).set_active(False)
+            self.encrypt_headers.set_active(False)
+        self._update_advanced_summary()
+        self._validate_form()
+
+    def _volume_changed(self, _combo: Adw.ComboRow, _param) -> None:
+        self.custom_volume.set_visible(self._selected_volume() == _CUSTOM_VOLUME)
+        self._update_advanced_summary()
+        self._validate_form()
+
+    def _advanced_option_changed(self, _combo: Adw.ComboRow, _param) -> None:
+        self._update_advanced_summary()
+
+    def _archive_format(self) -> ArchiveFormat:
+        return _FORMATS[self.format.get_selected()]
+
+    def _selected_volume(self) -> int | None:
+        return _VOLUME_SIZES[self.volume.get_selected()]
+
+    def _volume_size(self) -> int | None:
+        selected = self._selected_volume()
+        if selected != _CUSTOM_VOLUME:
+            return selected
+        return parse_binary_size(self.custom_volume.get_text())
+
+    def _update_advanced_summary(self) -> None:
+        parts = [
+            _("Auto threads")
+            if self.threads.get_selected() == 0
+            else _("Custom threads")
+        ]
+        if self._archive_format() is ArchiveFormat.SEVEN_ZIP:
+            parts.append(
+                _("Auto solid block")
+                if self.solid_block.get_selected() == 0
+                else _("Custom solid block")
+            )
+        parts.append(_("Single archive") if self._selected_volume() is None else _("Split archive"))
+        self.advanced.set_subtitle(" · ".join(parts))
+
+    def _validate_form(self, *_args) -> None:
+        password = self.password.get_text()
+        confirm = self.confirm_password.get_text()
+        passwords_match = password == confirm
+        headers_valid = not self.encrypt_headers.get_active() or bool(password)
+        if not passwords_match:
+            encryption_message = _("Passwords do not match.")
+        elif not headers_valid:
+            encryption_message = _("Enter a password to encrypt file names.")
+        else:
+            encryption_message = ""
+        self.encryption_group.set_description(encryption_message)
+        volume_valid = True
+        if self._selected_volume() == _CUSTOM_VOLUME:
+            try:
+                parse_binary_size(self.custom_volume.get_text())
+            except ValueError:
+                volume_valid = False
+        self.create_button.set_sensitive(
+            bool(self.name.get_text().strip())
+            and passwords_match
+            and headers_valid
+            and volume_valid
+        )
 
     def _create(self, _button: Gtk.Button) -> None:
         name = self.name.get_text().strip()
@@ -226,9 +418,17 @@ class CreateArchiveWindow(_FormWindow):
             self.show_error(_("Destination folder does not exist."))
             return
 
-        archive_format = ArchiveFormat(self.format.get_active_id())
+        archive_format = self._archive_format()
         password = self.password.get_text() or None
-        encrypt_headers = _row_switch(self.encrypt_headers).get_active()
+        if self.password.get_text() != self.confirm_password.get_text():
+            self.show_error(_("Passwords do not match."))
+            return
+        try:
+            volume_size = self._volume_size()
+        except ValueError:
+            self.show_error(_("Enter a valid volume size, for example 1500M or 4G."))
+            return
+        encrypt_headers = self.encrypt_headers.get_active()
         if encrypt_headers and not password:
             self.show_error(_("A password is required to encrypt file names."))
             return
@@ -237,18 +437,25 @@ class CreateArchiveWindow(_FormWindow):
             sources=self.paths,
             output=destination / name,
             archive_format=archive_format,
-            level=CompressionLevel(int(self.level.get_active_id())),
-            solid=_row_switch(self.solid).get_active(),
+            level=_LEVELS[self.level.get_selected()],
+            threads=None if self.threads.get_selected() == 0 else self.threads.get_selected(),
+            solid_block=(
+                _SOLID_BLOCKS[self.solid_block.get_selected()]
+                if archive_format is ArchiveFormat.SEVEN_ZIP
+                else None
+            ),
+            volume_size=volume_size,
             password=password,
             encrypt_headers=encrypt_headers,
-            verify=_row_switch(self.verify).get_active(),
+            verify=self.verify.get_active(),
         )
+        if output_path_exists(options.archive_path, split=volume_size is not None):
+            self.show_error(_("An archive with this name already exists."))
+            return
         specs = [self.builder.create(options)]
         if options.verify:
-            output = options.output
-            if not output.name.casefold().endswith(options.archive_format.suffix):
-                output = output.with_name(output.name + options.archive_format.suffix)
-            specs.append(self.builder.test(IntegrityTestOptions(output, password)))
+            verify_options = IntegrityTestOptions(options.verification_path, password)
+            specs.append(self.builder.test(verify_options))
         self.replace_with_progress(specs)
 
 
@@ -259,26 +466,30 @@ class ExtractArchiveWindow(_FormWindow):
         archive: Path,
         builder: SevenZipCommandBuilder,
     ) -> None:
-        super().__init__(application, title=_("Extract archive"))
+        super().__init__(application, title=_("Extract Archive"), default_height=500)
         self.archive = archive
         self.builder = builder
 
         destination = unique_path(archive.parent / archive_stem(archive))
-        self.destination = self.add_path_field(_("Destination"), destination)
-        self.password = Gtk.PasswordEntry(show_peek_icon=True)
-        self.add_field(_("Password (if required)"), self.password)
-
-        self.overwrite = Gtk.ComboBoxText()
-        self.overwrite.append(OverwriteMode.AUTO_RENAME.name, _("Rename extracted files"))
-        self.overwrite.append(OverwriteMode.OVERWRITE.name, _("Overwrite existing files"))
-        self.overwrite.append(OverwriteMode.SKIP.name, _("Skip existing files"))
-        self.overwrite.set_active_id(OverwriteMode.AUTO_RENAME.name)
-        self.add_field(_("If a file already exists"), self.overwrite)
-
-        extract = Gtk.Button(label=_("Extract"), halign=Gtk.Align.END)
-        extract.add_css_class("suggested-action")
-        extract.connect("clicked", self._extract)
-        self.form.append(extract)
+        group = Adw.PreferencesGroup(title=_("Extraction"))
+        self.destination = self.create_path_row(_("Destination"), destination)
+        self.password = Adw.PasswordEntryRow(
+            title=_("Password (if required)"),
+            activates_default=True,
+        )
+        self.overwrite = _combo_row(
+            _("If a file already exists"),
+            [
+                _("Rename extracted files"),
+                _("Overwrite existing files"),
+                _("Skip existing files"),
+            ],
+        )
+        group.add(self.destination)
+        group.add(self.password)
+        group.add(self.overwrite)
+        self.page.add(group)
+        self.add_primary_action(_("Extract"), self._extract)
 
     def _extract(self, _button: Gtk.Button) -> None:
         destination = Path(self.destination.get_text()).expanduser()
@@ -286,7 +497,7 @@ class ExtractArchiveWindow(_FormWindow):
         if not parent.is_dir():
             self.show_error(_("The parent of the destination folder does not exist."))
             return
-        overwrite = OverwriteMode[self.overwrite.get_active_id()]
+        overwrite = _OVERWRITE_MODES[self.overwrite.get_selected()]
         options = ExtractOptions(
             archive=self.archive,
             destination=destination,
@@ -409,18 +620,21 @@ class ProgressWindow(Adw.ApplicationWindow):
         self.close_button.set_sensitive(True)
 
 
-def _switch_row(label: str, active: bool) -> Gtk.Box:
-    row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-    row.append(Gtk.Label(label=label, xalign=0, hexpand=True))
-    row.append(Gtk.Switch(active=active, valign=Gtk.Align.CENTER))
+def _combo_row(
+    title: str,
+    labels: list[str],
+    *,
+    selected: int = 0,
+    subtitle: str | None = None,
+) -> Adw.ComboRow:
+    row = Adw.ComboRow(
+        title=title,
+        model=Gtk.StringList.new(labels),
+        selected=selected,
+    )
+    if subtitle is not None:
+        row.set_subtitle(subtitle)
     return row
-
-
-def _row_switch(row: Gtk.Box) -> Gtk.Switch:
-    widget = row.get_last_child()
-    if not isinstance(widget, Gtk.Switch):
-        raise TypeError("Switch row does not contain a Gtk.Switch")
-    return widget
 
 
 def _present_progress(application: Adw.Application | None, specs: list[CommandSpec]) -> None:

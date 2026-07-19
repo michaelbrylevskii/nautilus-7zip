@@ -17,8 +17,11 @@ built-in **Compress…** action and does not bundle an archiving engine.
 - A conditional **7-Zip** submenu for local Nautilus selections.
 - Interactive creation of `.7z` and `.zip` archives.
 - Quick **Create `<name>.7z`** and **Create `<name>.zip`** actions.
-- Compression level, solid mode, destination, and archive name controls.
+- Modern libadwaita forms with grouped, adaptive option rows.
+- Compression level, CPU thread, solid-block, destination, and archive name controls.
+- Optional multi-volume output with presets and custom binary sizes.
 - AES-256 password protection; 7z header encryption is supported.
+- Password confirmation and inline validation before archive creation.
 - **Extract…**, **Extract here**, and **Extract to `<name>/`** actions.
 - Configurable overwrite behavior during extraction.
 - Archive integrity testing.
@@ -48,13 +51,28 @@ CLI requires native filesystem paths.
 
 The two quick creation actions use compression level **Normal** (`-mx=5`),
 automatic threading (`-mmt=on`), no password, and no post-creation integrity
-test. The 7z action enables solid mode; the ZIP action uses Deflate. The output
-is placed beside the selection, and an incrementing suffix is added rather than
-overwriting an existing archive.
+test. The 7z action uses automatic solid-block sizing; the ZIP action uses
+Deflate. The output is placed beside the selection, and an incrementing suffix
+is added rather than overwriting an existing archive.
 
 During an operation, the window shows its status and progress bar. Detailed
 7-Zip output is available under the collapsed **Details** section and opens
 automatically if the operation fails.
+
+### Interactive creation options
+
+The creation form presents formats as **7Z (.7z)** and **ZIP (.zip)** and adds
+the selected extension automatically. Its collapsed **Advanced Options** row
+contains:
+
+- automatic or explicit CPU thread counts;
+- automatic, non-solid, 256 MiB, 1 GiB, 4 GiB, and fully solid 7z blocks;
+- single-file output, common volume-size presets, and custom values such as
+  `1500M` or `4G`.
+
+Split archives are written as numbered files such as `backup.7z.001` and
+`backup.7z.002`. Test and extract operations must start with `.001`. The
+4095 MiB preset stays below FAT32's per-file limit.
 
 ## Requirements
 
@@ -64,7 +82,7 @@ Runtime:
 - Python 3.11 or newer;
 - `nautilus-python` API 4;
 - PyGObject;
-- GTK 4 and libadwaita;
+- GTK 4 and libadwaita 1.5 or newer;
 - the official 7-Zip CLI, available as `7z`.
 
 Build and development:
@@ -239,8 +257,8 @@ AES-256 with encrypted headers is preferable when confidentiality matters and
 ## Roadmap
 
 - Persist non-secret defaults with GSettings.
-- Add thread-count selection and reusable presets to the UI.
-- Add split-volume controls.
+- Add compression-method, dictionary-size, and memory-limit controls.
+- Add reusable compression presets.
 - Add `.tar.zst`, `.tar.gz`, and `.tar.xz` workflows.
 - Add desktop notifications and an optional “open destination” action.
 - Add automated GTK smoke tests.

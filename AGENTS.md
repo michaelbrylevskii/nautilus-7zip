@@ -48,6 +48,7 @@ Keep option validation and command generation independent of GTK:
 - `labels.py`: GTK/Nautilus-safe user-visible label formatting;
 - `paths.py`: naming and archive detection;
 - `selection.py`: secure selection-manifest transfer;
+- `sizes.py`: validated human-readable binary size parsing;
 - `progress.py`: console progress parsing and terminal-control rendering;
 - `runner.py`: cancellable subprocess execution;
 - `application.py`: platform UI adapter only.
@@ -91,6 +92,13 @@ Keep option validation and command generation independent of GTK:
   visible; retain a scroller as the fallback for small displays and large text.
 - Keep form windows resizable for long paths, large text, tiling, and adaptive
   layouts. Do not replace adaptive sizing with a fixed, non-resizable window.
+- Build option forms from libadwaita preferences groups and rows. Keep detailed
+  compression controls inside a collapsed `Advanced Options` expander and use
+  concise row subtitles instead of adding question-mark buttons.
+- Display creation formats with their suffixes (`7Z (.7z)`, `ZIP (.zip)`), but
+  keep the editable archive name suffix-free by default.
+- A split archive is tested and extracted through its first `.001` volume.
+  Detect output collisions against that first volume before starting 7-Zip.
 
 ## Testing requirements
 
@@ -134,7 +142,9 @@ Implemented:
 
 - 7-Zip Nautilus submenu for local selections;
 - interactive and quick 7z/ZIP creation;
-- configurable format, level, solid mode, password, header encryption, output;
+- modern grouped libadwaita forms for creation and extraction;
+- configurable format, level, CPU threads, solid block, split volumes,
+  password confirmation, header encryption, and output;
 - extraction destination and overwrite policy;
 - integrity testing, progress, cancellation, and bounded, collapsible logs;
 - terminal-style rendering of 7-Zip backspace output for the GTK details view;
@@ -146,10 +156,9 @@ Known follow-ups:
 
 1. Exercise the UI manually under Nautilus 50 and record screenshots.
 2. Persist non-secret defaults with GSettings.
-3. Add explicit thread-count controls to the GUI (the command model supports
-   `threads`; current GUI uses automatic mode).
+3. Add compression-method, dictionary-size, and memory-limit controls.
 4. Improve password-prompt/error behavior for encrypted extraction.
-5. Add split volumes and tar+compressor workflows.
+5. Add tar+compressor workflows.
 6. Add a GTK smoke-test harness and test the extension with mocked Nautilus GI.
 7. Decide the permanent GitHub owner and update the application ID if needed.
 8. Add a release-backed `PKGBUILD` after the first tag.
