@@ -65,11 +65,14 @@ _VOLUME_SIZES = (
     None,
     100 * 1024**2,
     700 * 1024**2,
+    1024 * 1024**2,
     2 * 1024**3,
     4095 * 1024**2,
     _CUSTOM_VOLUME,
     _CUSTOM_VOLUME_ACTION,
 )
+_CUSTOM_VOLUME_INDEX = len(_VOLUME_SIZES) - 2
+_CUSTOM_VOLUME_ACTION_INDEX = len(_VOLUME_SIZES) - 1
 _OVERWRITE_MODES = (
     OverwriteMode.AUTO_RENAME,
     OverwriteMode.OVERWRITE,
@@ -320,10 +323,11 @@ class CreateArchiveWindow(_FormWindow):
             _("Controls how much data is grouped into each solid block.")
         )
         self._volume_popup_labels = [
-            _("None"),
+            _("Single archive"),
             "100 MiB",
             "700 MiB",
-            "2 GiB",
+            "1024 MiB",
+            "2048 MiB",
             "4095 MiB",
             "1500 MiB",
             _("Custom…"),
@@ -331,11 +335,12 @@ class CreateArchiveWindow(_FormWindow):
         self.volume = _described_combo_row(
             _("Split into volumes"),
             [
-                (_("None"), _("Single archive")),
+                (_("Single archive"), ""),
                 ("100 MiB", ""),
                 ("700 MiB", ""),
-                ("2 GiB", ""),
-                ("4095 MiB", "FAT32"),
+                ("1024 MiB", ""),
+                ("2048 MiB", ""),
+                ("4095 MiB", _("for FAT32")),
                 ("1500 MiB", _("Custom value")),
                 (_("Custom…"), _("Choose size")),
             ],
@@ -343,7 +348,8 @@ class CreateArchiveWindow(_FormWindow):
                 _("Single archive"),
                 "100 MiB",
                 "700 MiB",
-                "2 GiB",
+                "1024 MiB",
+                "2048 MiB",
                 "4095 MiB",
                 "1500 MiB",
                 _("Custom…"),
@@ -354,6 +360,9 @@ class CreateArchiveWindow(_FormWindow):
         self.volume.set_subtitle(
             _("Controls archive splitting and the maximum size of each volume.")
         )
+        self.threads.set_subtitle_lines(2)
+        self.solid_block.set_subtitle_lines(2)
+        self.volume.set_subtitle_lines(2)
         self.volume.connect("notify::selected", self._volume_changed)
         self._last_volume_selection = 0
         self._custom_volume_value = 1500.0
@@ -477,9 +486,13 @@ class CreateArchiveWindow(_FormWindow):
         )
         model = self.volume.get_model()
         if isinstance(model, Gtk.StringList):
-            self._volume_popup_labels[5] = self._custom_volume_display()
-            model.splice(5, 1, [self._custom_volume_display()])
-            self.volume.set_selected(5)
+            self._volume_popup_labels[_CUSTOM_VOLUME_INDEX] = self._custom_volume_display()
+            model.splice(
+                _CUSTOM_VOLUME_INDEX,
+                1,
+                [self._custom_volume_display()],
+            )
+            self.volume.set_selected(_CUSTOM_VOLUME_INDEX)
         self._custom_volume_dialog_open = False
         self._update_advanced_summary()
 
@@ -915,6 +928,32 @@ def _combo_row(
         model=Gtk.StringList.new(labels),
         selected=selected,
     )
+    selected_factory = Gtk.SignalListItemFactory()
+
+    def setup_selected(
+        _factory: Gtk.SignalListItemFactory,
+        list_item: Gtk.ListItem,
+    ) -> None:
+        label = Gtk.Label(
+            xalign=1,
+            halign=Gtk.Align.END,
+            single_line_mode=True,
+            ellipsize=Pango.EllipsizeMode.NONE,
+        )
+        list_item.set_child(label)
+
+    def bind_selected(
+        _factory: Gtk.SignalListItemFactory,
+        list_item: Gtk.ListItem,
+    ) -> None:
+        label = list_item.get_child()
+        item = list_item.get_item()
+        if isinstance(label, Gtk.Label) and isinstance(item, Gtk.StringObject):
+            label.set_label(item.get_string())
+
+    selected_factory.connect("setup", setup_selected)
+    selected_factory.connect("bind", bind_selected)
+    row.set_factory(selected_factory)
     if subtitle is not None:
         row.set_subtitle(subtitle)
     return row

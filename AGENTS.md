@@ -104,6 +104,9 @@ Keep option validation and command generation independent of GTK:
   from explanation; do not add redundant text to numeric sizes. Show exact
   selected values in the collapsed advanced summary. Keep a custom volume's
   actual size as a selectable value and `Custom…` as a repeatable dialog action.
+- Keep volume presets consistently expressed in MiB and call the unsplit state
+  `Single archive` in both the popup and selected-value display. Give selected
+  ComboRow values layout priority over wrapping technical subtitles.
 - A split archive is tested and extracted through its first `.001` volume.
   Detect output collisions against that first volume before starting 7-Zip.
 - Keep progress actions in the header bar. Show elapsed time unconditionally;

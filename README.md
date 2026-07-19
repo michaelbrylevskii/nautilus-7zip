@@ -69,8 +69,8 @@ contains:
 
 - automatic or explicit CPU thread counts;
 - automatic, non-solid, 256 MiB, 1 GiB, 4 GiB, and fully solid 7z blocks;
-- single-file output, common volume-size presets, and a compact custom-size
-  dialog with explicit MiB/GiB units.
+- single-file output, 100/700/1024/2048/4095 MiB volume presets, and a compact
+  custom-size dialog with explicit MiB/GiB units.
 
 The format picker describes each format inside its drop-down list. Password
 protection stays collapsed and disabled until explicitly enabled; 7z archives
