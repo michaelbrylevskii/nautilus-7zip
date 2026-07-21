@@ -971,6 +971,33 @@ def _combo_row(
     selected_factory.connect("setup", setup_selected)
     selected_factory.connect("bind", bind_selected)
     row.set_factory(selected_factory)
+
+    list_factory = Gtk.SignalListItemFactory()
+
+    def setup_list(
+        _factory: Gtk.SignalListItemFactory,
+        list_item: Gtk.ListItem,
+    ) -> None:
+        label = Gtk.Label(
+            xalign=0,
+            halign=Gtk.Align.FILL,
+            hexpand=True,
+            single_line_mode=True,
+        )
+        list_item.set_child(label)
+
+    def bind_list(
+        _factory: Gtk.SignalListItemFactory,
+        list_item: Gtk.ListItem,
+    ) -> None:
+        label = list_item.get_child()
+        item = list_item.get_item()
+        if isinstance(label, Gtk.Label) and isinstance(item, Gtk.StringObject):
+            label.set_label(item.get_string())
+
+    list_factory.connect("setup", setup_list)
+    list_factory.connect("bind", bind_list)
+    row.set_list_factory(list_factory)
     if subtitle is not None:
         row.set_subtitle(subtitle)
     return row

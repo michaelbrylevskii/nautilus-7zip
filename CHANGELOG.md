@@ -13,6 +13,11 @@ All notable changes will be documented in this file. The format follows
 - A strict `--sevenzip PATH` override with visible startup errors for missing,
   unusable, or timed-out backends.
 
+### Fixed
+
+- Restored left alignment for choices in simple option drop-downs while
+  keeping the selected row value right-aligned.
+
 ## [0.1.0] - 2026-07-19
 
 ### Added

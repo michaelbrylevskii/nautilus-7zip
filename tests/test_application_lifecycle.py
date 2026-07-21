@@ -87,3 +87,12 @@ def test_missing_application_does_not_close_form() -> None:
     with pytest.raises(RuntimeError, match="Application is not available"):
         application_module._FormWindow.replace_with_progress(form, [])  # type: ignore[arg-type]
     assert not form.closed
+
+
+@pytest.mark.gtk
+def test_simple_combo_uses_separate_selected_and_popup_factories() -> None:
+    row = application_module._combo_row("Compression level", ["Fast", "Normal"])
+
+    assert row.get_factory() is not None
+    assert row.get_list_factory() is not None
+    assert row.get_list_factory() is not row.get_factory()
