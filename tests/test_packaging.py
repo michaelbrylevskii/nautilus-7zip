@@ -31,6 +31,8 @@ def test_application_identity_matches_github_owner() -> None:
 
     assert f'APP_ID = "{APP_ID}"' in application
     assert desktop.is_file()
-    assert f"Icon={APP_ID}" in desktop.read_text(encoding="utf-8")
+    desktop_text = desktop.read_text(encoding="utf-8")
+    assert f"Icon={APP_ID}" in desktop_text
+    assert "Exec=nautilus-7zip open %F" in desktop_text
     assert regular_icon.is_file()
     assert symbolic_icon.is_file()

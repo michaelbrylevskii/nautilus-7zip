@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=7-Zip for Nautilus
 Comment=Create and extract archives with 7-Zip
-Exec=nautilus-7zip create %F
+Exec=nautilus-7zip open %F
 Icon=io.github.michaelbrylevskii.Nautilus7Zip
 Terminal=false
 Type=Application

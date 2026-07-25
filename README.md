@@ -19,6 +19,8 @@ Nautilus' built-in **Compress…** action and does not bundle an archiving engin
 ## Features
 
 - A conditional **7-Zip** submenu for local Nautilus selections.
+- Type-aware **Open With…** handling: extract a single archive, otherwise
+  create a new archive from the selection.
 - Interactive creation of `.7z` and `.zip` archives.
 - Quick **Create `<name>.7z`** and **Create `<name>.zip`** actions.
 - Modern libadwaita forms with grouped, adaptive option rows.
@@ -53,6 +55,14 @@ Nautilus' built-in **Compress…** action and does not bundle an archiving engin
 
 Remote locations such as `sftp://` are deliberately excluded because the 7-Zip
 CLI requires native filesystem paths.
+
+### Open With
+
+Opening a single recognized archive with **7-Zip for Nautilus** presents the
+interactive extraction form. Opening a regular file, a directory, or multiple
+items presents the archive creation form instead. A directory whose name ends
+with an archive suffix is still treated as a directory. To deliberately wrap
+an existing archive inside another archive, use **7-Zip → Create archive…**.
 
 ### Quick-action defaults
 

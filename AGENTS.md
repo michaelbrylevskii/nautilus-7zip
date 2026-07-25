@@ -24,6 +24,10 @@ changing the project.
 - English is the source language and mandatory fallback. Additional locales are
   gettext catalogs selected automatically from the system locale.
 - Supported creation formats are 7z and ZIP.
+- The desktop `Open With…` entry dispatches a single recognized archive file
+  to interactive extraction. Regular files, directories, and multiple
+  selections dispatch to interactive creation. Explicit Nautilus submenu
+  actions remain unchanged.
 
 ## Architecture and boundaries
 

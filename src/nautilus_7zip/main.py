@@ -14,9 +14,11 @@ from .diagnostics import (
     detect_nautilus_api,
     detect_toolkit_versions,
 )
+from .paths import is_archive
 from .selection import read_selection_file
 
 ACTIONS = (
+    "open",
     "create",
     "quick-create-7z",
     "quick-create-zip",
@@ -57,6 +59,14 @@ def resolve_paths(paths: list[Path], selection_file: Path | None) -> tuple[Path,
     return selected
 
 
+def resolve_open_action(paths: tuple[Path, ...]) -> str:
+    """Choose the operation expected when the desktop opens a selection."""
+
+    if len(paths) == 1 and paths[0].is_file() and is_archive(paths[0]):
+        return "extract"
+    return "create"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     namespace = parser.parse_args(argv)
@@ -87,6 +97,7 @@ def main(argv: list[str] | None = None) -> int:
         selected = resolve_paths(namespace.paths, namespace.selection_file)
     except (OSError, ValueError) as error:
         parser.error(str(error))
+    action = resolve_open_action(selected) if namespace.action == "open" else namespace.action
 
     try:
         backend = resolve_sevenzip(namespace.sevenzip)
@@ -95,7 +106,7 @@ def main(argv: list[str] | None = None) -> int:
         from .application import NautilusSevenZipApplication
 
         application = NautilusSevenZipApplication(
-            action=namespace.action,
+            action=action,
             paths=selected,
             startup_error=str(error),
             backend_override=namespace.sevenzip is not None,
@@ -106,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
     from .application import NautilusSevenZipApplication
 
     application = NautilusSevenZipApplication(
-        action=namespace.action,
+        action=action,
         paths=selected,
         backend=backend,
         backend_override=namespace.sevenzip is not None,

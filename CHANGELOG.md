@@ -19,6 +19,8 @@ All notable changes will be documented in this file. The format follows
   desktop, toolkit, Nautilus, locale, and backend report.
 - Explicit runtime validation for the supported GTK 4.14 and libadwaita 1.5
   baseline.
+- Type-aware desktop opening that extracts a single archive and creates an
+  archive for regular files, directories, and multiple selections.
 
 ### Fixed
 

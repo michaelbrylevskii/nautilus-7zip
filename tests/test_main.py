@@ -18,6 +18,11 @@ def test_parser_accepts_supported_action() -> None:
     assert namespace.sevenzip is None
 
 
+def test_parser_accepts_desktop_open_action() -> None:
+    namespace = main_module.build_parser().parse_args(["open", "/tmp/source"])
+    assert namespace.action == "open"
+
+
 def test_parser_accepts_diagnostics_without_paths() -> None:
     namespace = main_module.build_parser().parse_args(["diagnostics"])
     assert namespace.action == "diagnostics"
@@ -45,6 +50,29 @@ def test_resolve_rejects_ambiguous_and_empty_inputs(tmp_path: Path) -> None:
         main_module.resolve_paths([Path("other")], manifest)
     with pytest.raises(ValueError, match="At least one"):
         main_module.resolve_paths([], None)
+
+
+def test_desktop_open_extracts_single_archive_and_first_volume(tmp_path: Path) -> None:
+    archive = tmp_path / "backup.7z"
+    first_volume = tmp_path / "backup.zip.001"
+    archive.touch()
+    first_volume.touch()
+
+    assert main_module.resolve_open_action((archive,)) == "extract"
+    assert main_module.resolve_open_action((first_volume,)) == "extract"
+
+
+def test_desktop_open_creates_for_other_selections(tmp_path: Path) -> None:
+    regular_file = tmp_path / "document.txt"
+    archive_named_directory = tmp_path / "folder.zip"
+    archive = tmp_path / "backup.7z"
+    regular_file.touch()
+    archive_named_directory.mkdir()
+    archive.touch()
+
+    assert main_module.resolve_open_action((regular_file,)) == "create"
+    assert main_module.resolve_open_action((archive_named_directory,)) == "create"
+    assert main_module.resolve_open_action((archive, regular_file)) == "create"
 
 
 def test_main_reports_missing_7zip(
@@ -110,6 +138,33 @@ def test_main_runs_application(monkeypatch: pytest.MonkeyPatch) -> None:
         "backend_override": True,
         "argv": ["nautilus-7zip"],
     }
+
+
+def test_main_dispatches_desktop_open_to_extraction(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    received: dict[str, object] = {}
+
+    class FakeApplication:
+        def __init__(self, **kwargs: object) -> None:
+            received.update(kwargs)
+
+        def run(self, argv: list[str]) -> int:
+            received["argv"] = argv
+            return 0
+
+    module = types.ModuleType("nautilus_7zip.application")
+    module.NautilusSevenZipApplication = FakeApplication  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "nautilus_7zip.application", module)
+    backend = SevenZipBackend("/usr/bin/7z", "7z", "26.02")
+    monkeypatch.setattr(main_module, "resolve_sevenzip", lambda _executable: backend)
+    archive = tmp_path / "backup.tar.xz"
+    archive.touch()
+
+    assert main_module.main(["open", str(archive)]) == 0
+    assert received["action"] == "extract"
+    assert received["paths"] == (archive,)
 
 
 def test_main_turns_invalid_selection_into_parser_error() -> None:
