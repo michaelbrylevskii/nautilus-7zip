@@ -14,6 +14,7 @@ except ValueError:
 from gi.repository import Adw, Gdk, Gtk
 
 import nautilus_7zip.application as application_module
+from nautilus_7zip import __version__
 
 pytestmark = pytest.mark.gtk
 
@@ -48,3 +49,26 @@ def test_simple_combo_uses_separate_selected_and_popup_factories() -> None:
     assert isinstance(popup_label, Gtk.Label)
     assert popup_label.get_xalign() == 0
     assert popup_label.get_halign() == Gtk.Align.FILL
+
+
+def test_about_dialog_exposes_troubleshooting_report() -> None:
+    dialog = application_module._create_about_dialog("safe diagnostic report")
+
+    assert dialog.get_application_name() == "7-Zip for Nautilus"
+    assert dialog.get_application_icon() == application_module.APP_ID
+    assert dialog.get_version() == __version__
+    assert dialog.get_issue_url() == application_module.ISSUE_URL
+    assert dialog.get_debug_info() == "safe diagnostic report"
+    assert dialog.get_debug_info_filename() == "nautilus-7zip-diagnostics.txt"
+
+
+def test_application_menu_targets_about_action() -> None:
+    button = application_module._application_menu_button()
+    menu = button.get_menu_model()
+
+    assert menu is not None
+    assert menu.get_n_items() == 1
+    label = menu.get_item_attribute_value(0, "label", None)
+    action = menu.get_item_attribute_value(0, "action", None)
+    assert label is not None and label.get_string() == "About 7-Zip for Nautilus"
+    assert action is not None and action.get_string() == "app.about"

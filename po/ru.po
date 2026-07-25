@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nautilus-7zip 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-19 12:59-0300\n"
+"POT-Creation-Date: 2026-07-25 01:14-0300\n"
 "PO-Revision-Date: 2026-07-18 16:10-0300\n"
 "Last-Translator: Nautilus 7-Zip contributors\n"
 "Language-Team: Russian\n"
@@ -14,7 +14,7 @@ msgstr ""
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: data/io.github.michaelbrylevskii.Nautilus7Zip.desktop.in:2
-#: src/nautilus_7zip/application.py:986
+#: src/nautilus_7zip/application.py:1078 src/nautilus_7zip/application.py:1121
 msgid "7-Zip for Nautilus"
 msgstr "7-Zip для Nautilus"
 
@@ -57,354 +57,390 @@ msgstr "Проверить архив"
 msgid "7-Zip"
 msgstr "7-Zip"
 
-#: src/nautilus_7zip/application.py:122
+#: src/nautilus_7zip/application.py:146
 msgid "Extraction and testing require one archive."
 msgstr "Для распаковки или проверки выберите один архив."
 
-#: src/nautilus_7zip/application.py:168 src/nautilus_7zip/application.py:460
-#: src/nautilus_7zip/application.py:697
+#: src/nautilus_7zip/application.py:183
+msgid "Collecting diagnostics…"
+msgstr "Сбор диагностических данных…"
+
+#: src/nautilus_7zip/application.py:226 src/nautilus_7zip/application.py:519
+#: src/nautilus_7zip/application.py:756
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/nautilus_7zip/application.py:193
+#: src/nautilus_7zip/application.py:252
 msgid "Choose a folder"
 msgstr "Выбрать папку"
 
-#: src/nautilus_7zip/application.py:202
+#: src/nautilus_7zip/application.py:261
 msgid "Select a folder"
 msgstr "Выберите папку"
 
-#: src/nautilus_7zip/application.py:223
+#: src/nautilus_7zip/application.py:282
 msgid "Unable to start operation"
 msgstr "Не удалось запустить операцию"
 
-#: src/nautilus_7zip/application.py:224 src/nautilus_7zip/application.py:700
-#: src/nautilus_7zip/application.py:997
+#: src/nautilus_7zip/application.py:283 src/nautilus_7zip/application.py:759
+#: src/nautilus_7zip/application.py:1101
 msgid "Close"
 msgstr "Закрыть"
 
-#: src/nautilus_7zip/application.py:245
+#: src/nautilus_7zip/application.py:304
 msgid "Create Archive"
 msgstr "Создать архив"
 
-#: src/nautilus_7zip/application.py:249
+#: src/nautilus_7zip/application.py:308
 msgid "Archive"
 msgstr "Архив"
 
-#: src/nautilus_7zip/application.py:251
+#: src/nautilus_7zip/application.py:310
 msgid "Archive name"
 msgstr "Имя архива"
 
-#: src/nautilus_7zip/application.py:255 src/nautilus_7zip/application.py:636
+#: src/nautilus_7zip/application.py:314 src/nautilus_7zip/application.py:695
 msgid "Destination"
 msgstr "Папка назначения"
 
-#: src/nautilus_7zip/application.py:257
+#: src/nautilus_7zip/application.py:316
 msgid "Format"
 msgstr "Формат"
 
-#: src/nautilus_7zip/application.py:259
+#: src/nautilus_7zip/application.py:318
 msgid "High compression; may require 7-Zip on other systems."
 msgstr "Высокая степень сжатия; на других системах может потребоваться 7-Zip."
 
-#: src/nautilus_7zip/application.py:262
+#: src/nautilus_7zip/application.py:321
 msgid "Widely compatible; AES-256 encryption may require 7-Zip."
 msgstr ""
 "Широкая совместимость; для шифрования AES-256 может потребоваться 7-Zip."
 
-#: src/nautilus_7zip/application.py:268
+#: src/nautilus_7zip/application.py:327
 msgid "Compression level"
 msgstr "Уровень сжатия"
 
-#: src/nautilus_7zip/application.py:270
+#: src/nautilus_7zip/application.py:329
 msgid "Store (no compression)"
 msgstr "Без сжатия"
 
-#: src/nautilus_7zip/application.py:271
+#: src/nautilus_7zip/application.py:330
 msgid "Fastest"
 msgstr "Самое быстрое"
 
-#: src/nautilus_7zip/application.py:272
+#: src/nautilus_7zip/application.py:331
 msgid "Fast"
 msgstr "Быстрое"
 
-#: src/nautilus_7zip/application.py:273
+#: src/nautilus_7zip/application.py:332
 msgid "Normal"
 msgstr "Обычное"
 
-#: src/nautilus_7zip/application.py:274
+#: src/nautilus_7zip/application.py:333
 msgid "Maximum"
 msgstr "Максимальное"
 
-#: src/nautilus_7zip/application.py:275
+#: src/nautilus_7zip/application.py:334
 msgid "Ultra"
 msgstr "Ультра"
 
-#: src/nautilus_7zip/application.py:285
+#: src/nautilus_7zip/application.py:344
 msgid "Encryption"
 msgstr "Шифрование"
 
-#: src/nautilus_7zip/application.py:287
+#: src/nautilus_7zip/application.py:346
 msgid "Password protection"
 msgstr "Защита паролем"
 
-#: src/nautilus_7zip/application.py:288 src/nautilus_7zip/application.py:567
+#: src/nautilus_7zip/application.py:347 src/nautilus_7zip/application.py:626
 msgid "Encrypts archive contents with AES-256."
 msgstr "Шифрует содержимое архива с помощью AES-256."
 
-#: src/nautilus_7zip/application.py:294
+#: src/nautilus_7zip/application.py:353
 msgid "Password"
 msgstr "Пароль"
 
-#: src/nautilus_7zip/application.py:298
+#: src/nautilus_7zip/application.py:357
 msgid "Confirm password"
 msgstr "Подтвердите пароль"
 
-#: src/nautilus_7zip/application.py:302
+#: src/nautilus_7zip/application.py:361
 msgid "Encrypt file names"
 msgstr "Шифровать имена файлов"
 
-#: src/nautilus_7zip/application.py:303
+#: src/nautilus_7zip/application.py:362
 msgid "Hides file names until the password is entered."
 msgstr "Скрывает имена файлов до ввода пароля."
 
-#: src/nautilus_7zip/application.py:311
+#: src/nautilus_7zip/application.py:370
 msgid "Options"
 msgstr "Параметры"
 
-#: src/nautilus_7zip/application.py:313
+#: src/nautilus_7zip/application.py:372
 msgid "Verify after creation"
 msgstr "Проверить после создания"
 
-#: src/nautilus_7zip/application.py:314
+#: src/nautilus_7zip/application.py:373
 msgid "Tests archive integrity when compression finishes."
 msgstr "Проверяет целостность архива после завершения сжатия."
 
-#: src/nautilus_7zip/application.py:317
+#: src/nautilus_7zip/application.py:376
 msgid "Advanced Options"
 msgstr "Расширенные параметры"
 
-#: src/nautilus_7zip/application.py:320
+#: src/nautilus_7zip/application.py:379
 msgid "CPU threads"
 msgstr "Потоки CPU"
 
-#: src/nautilus_7zip/application.py:322
+#: src/nautilus_7zip/application.py:381
 #, python-brace-format
 msgid "Auto ({count})"
 msgstr "Автоматически ({count})"
 
-#: src/nautilus_7zip/application.py:325
+#: src/nautilus_7zip/application.py:384
 msgid "Limits CPU usage. Auto uses available processors."
 msgstr ""
 "Ограничивает нагрузку на CPU. Автоматический режим использует доступные "
 "потоки."
 
-#: src/nautilus_7zip/application.py:328
+#: src/nautilus_7zip/application.py:387
 msgid "Solid block"
 msgstr "Непрерывный блок"
 
-#: src/nautilus_7zip/application.py:330
+#: src/nautilus_7zip/application.py:389
 msgid "Auto"
 msgstr "Авто"
 
-#: src/nautilus_7zip/application.py:330
+#: src/nautilus_7zip/application.py:389
 msgid "Recommended"
 msgstr "Рекомендуется"
 
-#: src/nautilus_7zip/application.py:331
+#: src/nautilus_7zip/application.py:390
 msgid "Non-solid"
 msgstr "Без непрерывного сжатия"
 
-#: src/nautilus_7zip/application.py:331
+#: src/nautilus_7zip/application.py:390
 msgid "Independent extraction"
 msgstr "Независимое извлечение"
 
-#: src/nautilus_7zip/application.py:335
+#: src/nautilus_7zip/application.py:394
 msgid "Fully solid"
 msgstr "Полностью непрерывный"
 
-#: src/nautilus_7zip/application.py:335
+#: src/nautilus_7zip/application.py:394
 msgid "One block"
 msgstr "Один блок"
 
-#: src/nautilus_7zip/application.py:340
+#: src/nautilus_7zip/application.py:399
 msgid "Controls how much data is grouped into each solid block."
 msgstr "Определяет объём данных, объединяемых в один сплошной блок."
 
-#: src/nautilus_7zip/application.py:343 src/nautilus_7zip/application.py:355
-#: src/nautilus_7zip/application.py:365
+#: src/nautilus_7zip/application.py:402 src/nautilus_7zip/application.py:414
+#: src/nautilus_7zip/application.py:424
 msgid "Single archive"
 msgstr "Один архив"
 
-#: src/nautilus_7zip/application.py:350 src/nautilus_7zip/application.py:362
-#: src/nautilus_7zip/application.py:372
+#: src/nautilus_7zip/application.py:409 src/nautilus_7zip/application.py:421
+#: src/nautilus_7zip/application.py:431
 msgid "Custom…"
 msgstr "Другой размер…"
 
-#: src/nautilus_7zip/application.py:353
+#: src/nautilus_7zip/application.py:412
 msgid "Split into volumes"
 msgstr "Разбить на тома"
 
-#: src/nautilus_7zip/application.py:360
+#: src/nautilus_7zip/application.py:419
 msgid "for FAT32"
 msgstr "для FAT32"
 
-#: src/nautilus_7zip/application.py:361
+#: src/nautilus_7zip/application.py:420
 msgid "Custom value"
 msgstr "Пользовательский"
 
-#: src/nautilus_7zip/application.py:362
+#: src/nautilus_7zip/application.py:421
 msgid "Choose size"
 msgstr "Выбрать размер"
 
-#: src/nautilus_7zip/application.py:378
+#: src/nautilus_7zip/application.py:437
 msgid "Controls archive splitting and the maximum size of each volume."
 msgstr "Определяет разбиение архива и максимальный размер каждого тома."
 
-#: src/nautilus_7zip/application.py:396
+#: src/nautilus_7zip/application.py:455
 msgid "Create"
 msgstr "Создать"
 
-#: src/nautilus_7zip/application.py:432
+#: src/nautilus_7zip/application.py:491
 msgid "Custom Volume Size"
 msgstr "Пользовательский размер тома"
 
-#: src/nautilus_7zip/application.py:454
+#: src/nautilus_7zip/application.py:513
 msgid "Volume size"
 msgstr "Размер тома"
 
-#: src/nautilus_7zip/application.py:461
+#: src/nautilus_7zip/application.py:520
 msgid "Apply"
 msgstr "Применить"
 
-#: src/nautilus_7zip/application.py:545
+#: src/nautilus_7zip/application.py:604
 #, python-brace-format
 msgid "Threads: {value}"
 msgstr "Потоки: {value}"
 
-#: src/nautilus_7zip/application.py:549
+#: src/nautilus_7zip/application.py:608
 #, python-brace-format
 msgid "Solid: {value}"
 msgstr "Сплошной блок: {value}"
 
-#: src/nautilus_7zip/application.py:552
+#: src/nautilus_7zip/application.py:611
 #, python-brace-format
 msgid "Volumes: {value}"
 msgstr "Тома: {value}"
 
-#: src/nautilus_7zip/application.py:563 src/nautilus_7zip/application.py:589
+#: src/nautilus_7zip/application.py:622 src/nautilus_7zip/application.py:648
 msgid "Passwords do not match."
 msgstr "Пароли не совпадают."
 
-#: src/nautilus_7zip/application.py:565
+#: src/nautilus_7zip/application.py:624
 msgid "Enter a password to encrypt file names."
 msgstr "Введите пароль, чтобы зашифровать имена файлов."
 
-#: src/nautilus_7zip/application.py:579
+#: src/nautilus_7zip/application.py:638
 msgid "Archive name must not be empty."
 msgstr "Имя архива не может быть пустым."
 
-#: src/nautilus_7zip/application.py:582
+#: src/nautilus_7zip/application.py:641
 msgid "Destination folder does not exist."
 msgstr "Папка назначения не существует."
 
-#: src/nautilus_7zip/application.py:594
+#: src/nautilus_7zip/application.py:653
 msgid "A password is required to encrypt file names."
 msgstr "Для шифрования имён файлов требуется пароль."
 
-#: src/nautilus_7zip/application.py:614
+#: src/nautilus_7zip/application.py:673
 msgid "An archive with this name already exists."
 msgstr "Архив с таким именем уже существует."
 
-#: src/nautilus_7zip/application.py:630
+#: src/nautilus_7zip/application.py:689
 msgid "Extract Archive"
 msgstr "Распаковать архив"
 
-#: src/nautilus_7zip/application.py:635
+#: src/nautilus_7zip/application.py:694
 msgid "Extraction"
 msgstr "Распаковка"
 
-#: src/nautilus_7zip/application.py:638
+#: src/nautilus_7zip/application.py:697
 msgid "Password (if required)"
 msgstr "Пароль (если требуется)"
 
-#: src/nautilus_7zip/application.py:642
+#: src/nautilus_7zip/application.py:701
 msgid "If a file already exists"
 msgstr "Если файл уже существует"
 
-#: src/nautilus_7zip/application.py:644
+#: src/nautilus_7zip/application.py:703
 msgid "Rename extracted files"
 msgstr "Переименовывать распакованные файлы"
 
-#: src/nautilus_7zip/application.py:645
+#: src/nautilus_7zip/application.py:704
 msgid "Overwrite existing files"
 msgstr "Перезаписывать существующие файлы"
 
-#: src/nautilus_7zip/application.py:646
+#: src/nautilus_7zip/application.py:705
 msgid "Skip existing files"
 msgstr "Пропускать существующие файлы"
 
-#: src/nautilus_7zip/application.py:653
+#: src/nautilus_7zip/application.py:712
 msgid "Extract"
 msgstr "Распаковать"
 
-#: src/nautilus_7zip/application.py:659
+#: src/nautilus_7zip/application.py:718
 msgid "The parent of the destination folder does not exist."
 msgstr "Родительская папка для каталога назначения не существует."
 
-#: src/nautilus_7zip/application.py:675 src/nautilus_7zip/application.py:696
+#: src/nautilus_7zip/application.py:734 src/nautilus_7zip/application.py:755
 msgid "7-Zip operation"
 msgstr "Операция 7-Zip"
 
-#: src/nautilus_7zip/application.py:729
+#: src/nautilus_7zip/application.py:789
 msgid "Details"
 msgstr "Подробности"
 
-#: src/nautilus_7zip/application.py:747
+#: src/nautilus_7zip/application.py:807
 msgid "Operation completed successfully"
 msgstr "Операция успешно завершена"
 
-#: src/nautilus_7zip/application.py:796
+#: src/nautilus_7zip/application.py:856
 #, python-brace-format
 msgid "Elapsed {duration}"
 msgstr "Прошло: {duration}"
 
-#: src/nautilus_7zip/application.py:802
+#: src/nautilus_7zip/application.py:862
 #, python-brace-format
 msgid "Step {current}/{total}"
 msgstr "Шаг {current}/{total}"
 
-#: src/nautilus_7zip/application.py:810
+#: src/nautilus_7zip/application.py:870
 #, python-brace-format
 msgid "Items {current}/{total}"
 msgstr "Элементы: {current}/{total}"
 
-#: src/nautilus_7zip/application.py:817
+#: src/nautilus_7zip/application.py:877
 #, python-brace-format
 msgid "Items processed: {count}"
 msgstr "Обработано элементов: {count}"
 
-#: src/nautilus_7zip/application.py:823
+#: src/nautilus_7zip/application.py:883
 #, python-brace-format
 msgid "About {duration} remaining"
 msgstr "Осталось примерно {duration}"
 
-#: src/nautilus_7zip/application.py:836
+#: src/nautilus_7zip/application.py:896
 msgid "Operation cancelled"
 msgstr "Операция отменена"
 
-#: src/nautilus_7zip/application.py:838
+#: src/nautilus_7zip/application.py:898
 #, python-brace-format
 msgid "7-Zip exited with status {status}."
 msgstr "7-Zip завершился с кодом {status}."
 
-#: src/nautilus_7zip/application.py:841
+#: src/nautilus_7zip/application.py:901
 msgid "Operation failed"
 msgstr "Операция завершилась с ошибкой"
 
-#: src/nautilus_7zip/application.py:850
+#: src/nautilus_7zip/application.py:910
 msgid "Cancelling…"
 msgstr "Отмена…"
+
+#: src/nautilus_7zip/application.py:1097
+msgid "About and Diagnostics"
+msgstr "О приложении и диагностика"
+
+#: src/nautilus_7zip/application.py:1111
+#, fuzzy
+msgid "About 7-Zip for Nautilus"
+msgstr "7-Zip для Nautilus"
+
+#: src/nautilus_7zip/application.py:1115
+msgid "Main Menu"
+msgstr "Главное меню"
+
+#: src/nautilus_7zip/application.py:1125
+#, fuzzy
+msgid "Create and extract archives with 7-Zip from Nautilus."
+msgstr "Создание и распаковка архивов с помощью 7-Zip"
+
+#: src/nautilus_7zip/application.py:1155
+#, python-brace-format
+msgid "{component} {actual} (requires {required} or newer)"
+msgstr "{component} {actual} (требуется {required} или новее)"
+
+#: src/nautilus_7zip/application.py:1163
+#, python-brace-format
+msgid ""
+"Unsupported desktop library versions: {details}. Run 'nautilus-7zip "
+"diagnostics' for a complete report."
+msgstr ""
+"Неподдерживаемые версии библиотек рабочего стола: {details}. Выполните "
+"«nautilus-7zip diagnostics», чтобы получить полный отчёт."
 
 #: src/nautilus_7zip/backend.py:60
 #, python-brace-format

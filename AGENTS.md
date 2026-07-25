@@ -48,12 +48,14 @@ Keep option validation and command generation independent of GTK:
 - `models.py`: immutable validated option models;
 - `backend.py`: bounded backend discovery, validation, and version parsing;
 - `commands.py`: `CommandSpec` and safe 7-Zip argv construction;
+- `diagnostics.py`: bounded privacy-safe system/backend report collection;
 - `labels.py`: GTK/Nautilus-safe user-visible label formatting;
 - `paths.py`: naming and archive detection;
 - `selection.py`: secure selection-manifest transfer;
 - `sizes.py`: validated human-readable binary size parsing;
 - `progress.py`: console progress parsing and terminal-control rendering;
 - `runner.py`: cancellable subprocess execution;
+- `runtime.py`: supported GTK/libadwaita version rules;
 - `application.py`: platform UI adapter only.
 
 ## Security invariants
@@ -68,6 +70,11 @@ Keep option validation and command generation independent of GTK:
 - Do not operate on remote/non-native Nautilus URIs.
 - Do not add delete-source behavior without explicit product review, recovery
   design, and tests.
+- Diagnostic collection must use an explicit field allowlist. Never pass
+  selections, passwords, the full environment, username, or hostname to it;
+  collapse the home directory to `~` in included executable/install paths.
+- Diagnostic subprocesses must be noninteractive, shell-free, bounded by a
+  short timeout, and run outside the GTK main loop.
 - Cancellation sends SIGTERM to the dedicated child process group. Do not send
   signals to a broad or unresolved target.
 
@@ -171,6 +178,9 @@ Implemented:
   and best-effort item statistics;
 - terminal-style rendering of 7-Zip backspace output for the GTK details view;
 - Xvfb-backed GTK widget smoke tests in CI and release verification;
+- native About/Troubleshooting UI and a headless privacy-safe diagnostics
+  command;
+- explicit GTK 4.14/libadwaita 1.5 runtime compatibility validation;
 - stdin password transport;
 - validated `7z`/`7zz` discovery with a strict executable override;
 - Meson installation, gettext scaffolding, complete Russian catalog;
@@ -181,10 +191,9 @@ Implemented:
 
 The ordered product plan lives in `ROADMAP.md`. Immediate follow-ups:
 
-1. Add a privacy-safe application and backend diagnostics view.
-2. Exercise clean tagged-release installation across supported distributions.
-3. Add a maintained Arch/Manjaro package recipe.
-4. Expand GTK widget smoke coverage and test the extension with mocked Nautilus
+1. Exercise clean tagged-release installation across supported distributions.
+2. Add a maintained Arch/Manjaro package recipe.
+3. Expand GTK widget smoke coverage and test the extension with mocked Nautilus
    GI.
 
 ## Definition of done for changes

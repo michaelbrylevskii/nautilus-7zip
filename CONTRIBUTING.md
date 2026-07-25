@@ -42,13 +42,13 @@ Separate refactoring from behavior changes where practical.
 
 Include:
 
-- distribution and desktop session;
-- Nautilus and nautilus-python versions;
-- output of `7z i` with personal paths removed;
+- output of `nautilus-7zip diagnostics`;
 - selected archive format and relevant options;
 - expected and actual behavior.
 
-Never publish archive passwords, private filenames, or unredacted logs.
+The diagnostics report excludes operation selections and secrets by design,
+but review it before publishing. Never publish archive passwords, private
+filenames, or unredacted operation logs.
 
 ## Releases
 

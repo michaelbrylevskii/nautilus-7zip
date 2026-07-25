@@ -48,6 +48,7 @@ jobs:
             'from nautilus_7zip.backend import resolve_sevenzip; print(resolve_sevenzip().display_name)'
           .venv/bin/python -c \
             'import gi; gi.require_version("Gtk", "4.0"); gi.require_version("Adw", "1"); from gi.repository import Adw, Gtk'
+          .venv/bin/nautilus-7zip diagnostics
 
       - name: Lint
         run: ruff check .

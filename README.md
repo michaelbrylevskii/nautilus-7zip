@@ -35,6 +35,8 @@ Nautilus' built-in **Compress…** action and does not bundle an archiving engin
 - Complete Russian translation included.
 - Passwords are sent through stdin instead of process arguments.
 - Automatic backend discovery prefers `7z` and falls back to `7zz`.
+- Native About/Troubleshooting information with a privacy-safe diagnostics
+  report and a headless CLI fallback.
 
 ## Context menu
 
@@ -98,13 +100,15 @@ Runtime:
 - Linux with GNOME Files/Nautilus 43 or newer and nautilus-python API 4;
 - Python 3.11 or newer;
 - PyGObject;
-- GTK 4.10 or newer;
+- GTK 4.14 or newer;
 - libadwaita 1.5 or newer;
 - the official 7-Zip CLI, available as `7z` or `7zz`.
 
 At startup, the helper checks `7z` and then `7zz` from `PATH` and validates the
 first usable executable. Use `--sevenzip /path/to/executable` for a strict
 override; an invalid override is reported instead of silently falling back.
+The helper validates the GTK/libadwaita runtime before presenting operation
+windows and reports incompatible library versions explicitly.
 
 Build and development:
 
@@ -227,9 +231,15 @@ During development, the helper can be run directly:
 PYTHONPATH=src python -m nautilus_7zip.main create /path/to/file /path/to/folder
 PYTHONPATH=src python -m nautilus_7zip.main extract /path/to/archive.7z
 PYTHONPATH=src python -m nautilus_7zip.main test /path/to/archive.zip
+PYTHONPATH=src python -m nautilus_7zip.main diagnostics
 ```
 
 Use `--sevenzip /path/to/7z-or-7zz` to test another executable.
+The `diagnostics` action requires no selected files and succeeds even when the
+backend is missing. It reports application, desktop, toolkit, Nautilus, locale,
+and backend versions without including archive selections, passwords, the
+hostname, username, or the complete process environment. The same report is
+available from **About 7-Zip for Nautilus → Troubleshooting** in the helper.
 
 ## Architecture
 
@@ -241,6 +251,7 @@ Nautilus process
     └── secure JSON selection manifest
         └── standalone GTK/libadwaita helper
             ├── validated option models
+            ├── privacy-safe diagnostics collector
             ├── safe argv command builder
             ├── cancellable subprocess runner
             └── validated system 7z or 7zz executable
@@ -281,6 +292,8 @@ not be translated.
 - Never persist, log, or include passwords in process arguments.
 - Selection manifests are created with mode `0600` and removed after reading.
 - Only local `file://` selections are accepted by the Nautilus extension.
+- Diagnostics use an explicit field allowlist and never receive operation
+  selections or passwords.
 - A failed or cancelled archive operation must not delete source data.
 - Destructive post-archive actions are intentionally unsupported.
 
@@ -291,15 +304,15 @@ AES-256 with encrypted headers is preferable when confidentiality matters and
 
 ## Roadmap
 
-The next milestone focuses on backend diagnostics, clean installation across
-distributions, native packaging, and GTK/Nautilus integration tests. See
+The next milestone focuses on clean installation across distributions, native
+packaging, and GTK/Nautilus integration tests. See
 [`ROADMAP.md`](ROADMAP.md) for the ordered release plan and scope boundaries.
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). Bug reports should include the
-Nautilus version, `nautilus-python` version, 7-Zip version, distribution, and the
-console output produced by the helper with secrets removed.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Bug reports should attach the output
+of `nautilus-7zip diagnostics` and describe the selected archive operation and
+its expected and actual behavior. Review reports before publishing them.
 
 ## License
 

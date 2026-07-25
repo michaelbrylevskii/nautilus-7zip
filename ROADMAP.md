@@ -5,14 +5,14 @@ Priorities may change in response to compatibility findings and user feedback.
 
 ## v0.2.0 — Reliability and distribution
 
-1. Discover and validate `7z` and `7zz` backends, with a strict executable
+- [x] Discover and validate `7z` and `7zz` backends, with a strict executable
    override and actionable startup errors.
-2. Add a privacy-safe diagnostics view containing application, backend,
+- [x] Add a privacy-safe diagnostics view containing application, backend,
    Nautilus, GTK, libadwaita, and locale versions.
-3. Verify clean installation and removal from a tagged source archive across a
+- [ ] Verify clean installation and removal from a tagged source archive across a
    small supported-distribution matrix.
-4. Publish a maintained Arch/Manjaro package recipe.
-5. Expand the Xvfb-backed GTK smoke suite and add contract tests for the
+- [ ] Publish a maintained Arch/Manjaro package recipe.
+- [ ] Expand the Xvfb-backed GTK smoke suite and add contract tests for the
    Nautilus menu provider.
 
 ## v0.3.0 — Everyday workflow

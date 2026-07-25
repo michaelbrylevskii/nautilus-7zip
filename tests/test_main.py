@@ -8,6 +8,7 @@ import pytest
 
 import nautilus_7zip.main as main_module
 from nautilus_7zip.backend import SevenZipBackend, SevenZipBackendError
+from nautilus_7zip.diagnostics import ToolkitVersions
 
 
 def test_parser_accepts_supported_action() -> None:
@@ -15,6 +16,12 @@ def test_parser_accepts_supported_action() -> None:
     assert namespace.action == "create"
     assert namespace.paths == [Path("/tmp/source")]
     assert namespace.sevenzip is None
+
+
+def test_parser_accepts_diagnostics_without_paths() -> None:
+    namespace = main_module.build_parser().parse_args(["diagnostics"])
+    assert namespace.action == "diagnostics"
+    assert namespace.paths == []
 
 
 def test_resolve_direct_paths() -> None:
@@ -73,6 +80,7 @@ def test_main_reports_missing_7zip(
         "action": "create",
         "paths": (Path("/tmp/source"),),
         "startup_error": "backend missing",
+        "backend_override": True,
         "argv": ["nautilus-7zip"],
     }
 
@@ -99,6 +107,7 @@ def test_main_runs_application(monkeypatch: pytest.MonkeyPatch) -> None:
         "action": "test",
         "paths": (Path("/tmp/archive.7z"),),
         "backend": backend,
+        "backend_override": True,
         "argv": ["nautilus-7zip"],
     }
 
@@ -106,4 +115,62 @@ def test_main_runs_application(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_main_turns_invalid_selection_into_parser_error() -> None:
     with pytest.raises(SystemExit) as error:
         main_module.main(["create"])
+    assert error.value.code == 2
+
+
+def test_main_prints_diagnostics_without_starting_gtk(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    backend = SevenZipBackend("/usr/bin/7z", "7z", "26.02")
+    received: dict[str, object] = {}
+    monkeypatch.setattr(main_module, "resolve_sevenzip", lambda executable: backend)
+    monkeypatch.setattr(
+        main_module,
+        "detect_toolkit_versions",
+        lambda: ToolkitVersions(gtk=(4, 14, 0), libadwaita=(1, 5, 0)),
+    )
+    monkeypatch.setattr(main_module, "detect_nautilus_api", lambda: "4.1")
+
+    def collect(context: object) -> str:
+        received["context"] = context
+        return "diagnostic report\n"
+
+    monkeypatch.setattr(main_module, "collect_diagnostics", collect)
+
+    assert main_module.main(["diagnostics"]) == 0
+    assert capsys.readouterr().out == "diagnostic report\n"
+    context = received["context"]
+    assert context.backend is backend  # type: ignore[attr-defined]
+    assert context.backend_error is None  # type: ignore[attr-defined]
+    assert context.backend_override is False  # type: ignore[attr-defined]
+
+
+def test_diagnostics_reports_backend_failure_and_rejects_paths(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    received: dict[str, object] = {}
+    monkeypatch.setattr(
+        main_module,
+        "resolve_sevenzip",
+        lambda _executable: (_ for _ in ()).throw(
+            SevenZipBackendError("backend missing", exit_code=127)
+        ),
+    )
+    monkeypatch.setattr(main_module, "detect_toolkit_versions", ToolkitVersions)
+    monkeypatch.setattr(main_module, "detect_nautilus_api", lambda: None)
+    monkeypatch.setattr(
+        main_module,
+        "collect_diagnostics",
+        lambda context: received.setdefault("context", context) and "report\n",
+    )
+
+    assert main_module.main(["diagnostics", "--sevenzip", "missing"]) == 0
+    context = received["context"]
+    assert context.backend is None  # type: ignore[attr-defined]
+    assert context.backend_error == "backend missing"  # type: ignore[attr-defined]
+    assert context.backend_override is True  # type: ignore[attr-defined]
+
+    with pytest.raises(SystemExit) as error:
+        main_module.main(["diagnostics", "/private/source"])
     assert error.value.code == 2

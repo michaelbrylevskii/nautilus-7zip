@@ -14,6 +14,11 @@ All notable changes will be documented in this file. The format follows
   unusable, or timed-out backends.
 - An Xvfb-backed GTK widget smoke-test harness for headless CI and release
   verification.
+- Native About/Troubleshooting information and a headless
+  `nautilus-7zip diagnostics` command with a privacy-safe application,
+  desktop, toolkit, Nautilus, locale, and backend report.
+- Explicit runtime validation for the supported GTK 4.14 and libadwaita 1.5
+  baseline.
 
 ### Fixed
 

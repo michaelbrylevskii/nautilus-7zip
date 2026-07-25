@@ -12,6 +12,7 @@ except ValueError:
 
 import nautilus_7zip.application as application_module
 from nautilus_7zip.commands import CommandSpec
+from nautilus_7zip.runtime import RuntimeIssue
 
 
 @pytest.mark.gtk
@@ -29,11 +30,46 @@ def test_startup_error_is_presented_before_any_action(
         "_show_standalone_error",
         lambda application, message: received.append((application, message)),
     )
+    monkeypatch.setattr(application_module, "_current_runtime_issues", tuple)
     application = FakeApplication()
 
     application_module.NautilusSevenZipApplication.do_activate(application)  # type: ignore[arg-type]
 
     assert received == [(application, "backend missing")]
+
+
+@pytest.mark.gtk
+def test_unsupported_runtime_is_presented_without_diagnostics_action(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    received: list[tuple[object, str, bool]] = []
+    issue = RuntimeIssue("GTK", (4, 12, 0), (4, 14, 0))
+
+    class FakeApplication:
+        startup_error = None
+        builder = object()
+
+    monkeypatch.setattr(application_module, "_current_runtime_issues", lambda: (issue,))
+    monkeypatch.setattr(
+        application_module,
+        "_show_standalone_error",
+        lambda application, message, *, offer_diagnostics: received.append(
+            (application, message, offer_diagnostics)
+        ),
+    )
+    application = FakeApplication()
+
+    application_module.NautilusSevenZipApplication.do_activate(application)  # type: ignore[arg-type]
+
+    assert received == [
+        (
+            application,
+            "Unsupported desktop library versions: GTK 4.12.0 "
+            "(requires 4.14.0 or newer). Run 'nautilus-7zip diagnostics' "
+            "for a complete report.",
+            False,
+        )
+    ]
 
 
 @pytest.mark.gtk

@@ -8,6 +8,7 @@ UI or backend failure cannot take down the file manager itself.
 from __future__ import annotations
 
 import os
+import threading
 import time
 from collections import deque
 from pathlib import Path
@@ -18,8 +19,15 @@ gi.require_version("Adw", "1")
 gi.require_version("Gtk", "4.0")
 from gi.repository import Adw, Gio, GLib, Gtk, Pango
 
+from . import __version__
 from .backend import SevenZipBackend
 from .commands import CommandSpec, SevenZipCommandBuilder
+from .diagnostics import (
+    DiagnosticsContext,
+    ToolkitVersions,
+    collect_diagnostics,
+    detect_nautilus_api,
+)
 from .i18n import _
 from .models import (
     ArchiveFormat,
@@ -39,9 +47,12 @@ from .paths import (
 )
 from .progress import format_duration, parse_file_progress
 from .runner import OperationHandle, RunResult, SubprocessRunner
+from .runtime import RuntimeIssue, check_runtime_versions, format_version
 from .sizes import parse_binary_size
 
 APP_ID = "io.github.michaelbrylevskii.Nautilus7Zip"
+PROJECT_URL = "https://github.com/michaelbrylevskii/nautilus-7zip"
+ISSUE_URL = f"{PROJECT_URL}/issues"
 
 _FORMATS = (ArchiveFormat.SEVEN_ZIP, ArchiveFormat.ZIP)
 _LEVELS = (
@@ -89,6 +100,7 @@ class NautilusSevenZipApplication(Adw.Application):
         paths: tuple[Path, ...],
         backend: SevenZipBackend | None = None,
         startup_error: str | None = None,
+        backend_override: bool = False,
     ) -> None:
         if (backend is None) == (startup_error is None):
             raise ValueError("Pass exactly one of backend or startup_error")
@@ -100,9 +112,21 @@ class NautilusSevenZipApplication(Adw.Application):
         self.paths = paths
         self.backend = backend
         self.startup_error = startup_error
+        self.backend_override = backend_override
         self.builder = SevenZipCommandBuilder(backend.executable) if backend is not None else None
+        about = Gio.SimpleAction.new("about", None)
+        about.connect("activate", self._show_about)
+        self.add_action(about)
 
     def do_activate(self) -> None:
+        runtime_issues = _current_runtime_issues()
+        if runtime_issues:
+            _show_standalone_error(
+                self,
+                _runtime_error_message(runtime_issues),
+                offer_diagnostics=False,
+            )
+            return
         if self.startup_error is not None:
             _show_standalone_error(self, self.startup_error)
             return
@@ -148,6 +172,40 @@ class NautilusSevenZipApplication(Adw.Application):
         )
         _present_progress(self, [self.builder.create(options)])
 
+    def _show_about(
+        self,
+        _action: Gio.SimpleAction,
+        _parameter: GLib.Variant | None,
+    ) -> None:
+        parent = self.get_active_window()
+        if parent is None:
+            return
+        dialog = _create_about_dialog(_("Collecting diagnostics…"))
+        dialog.present(parent)
+        context = DiagnosticsContext(
+            application_version=__version__,
+            module_path=Path(__file__).parent,
+            backend=self.backend,
+            backend_error=self.startup_error,
+            backend_override=self.backend_override,
+            toolkit=_current_toolkit_versions(),
+            nautilus_api=detect_nautilus_api(),
+        )
+        threading.Thread(
+            target=self._collect_about_diagnostics,
+            args=(dialog, context),
+            daemon=True,
+            name="nautilus-7zip-diagnostics",
+        ).start()
+
+    @staticmethod
+    def _collect_about_diagnostics(
+        dialog: Adw.AboutDialog,
+        context: DiagnosticsContext,
+    ) -> None:
+        report = collect_diagnostics(context)
+        GLib.idle_add(dialog.set_debug_info, report)
+
 
 class _FormWindow(Adw.ApplicationWindow):
     def __init__(
@@ -168,6 +226,7 @@ class _FormWindow(Adw.ApplicationWindow):
         cancel = Gtk.Button(label=_("Cancel"))
         cancel.connect("clicked", lambda _button: self.close())
         self.header.pack_start(cancel)
+        self.header.pack_end(_application_menu_button())
         toolbar.add_top_bar(self.header)
 
         self.page = Adw.PreferencesPage()
@@ -700,6 +759,7 @@ class ProgressWindow(Adw.ApplicationWindow):
         self.close_button = Gtk.Button(label=_("Close"), visible=False)
         self.close_button.add_css_class("suggested-action")
         self.close_button.connect("clicked", lambda _button: self.close())
+        header.pack_end(_application_menu_button())
         header.pack_end(self.close_button)
         toolbar.add_top_bar(header)
         content = Gtk.Box(
@@ -1009,7 +1069,12 @@ def _present_progress(application: Adw.Application | None, specs: list[CommandSp
     ProgressWindow(application, specs).start()
 
 
-def _show_standalone_error(application: Adw.Application, message: str) -> None:
+def _show_standalone_error(
+    application: Adw.Application,
+    message: str,
+    *,
+    offer_diagnostics: bool = True,
+) -> None:
     window = Adw.ApplicationWindow(application=application, title=_("7-Zip for Nautilus"))
     window.set_default_size(440, 160)
     box = Gtk.Box(
@@ -1021,8 +1086,80 @@ def _show_standalone_error(application: Adw.Application, message: str) -> None:
         margin_end=24,
     )
     box.append(Gtk.Label(label=message, wrap=True))
-    close = Gtk.Button(label=_("Close"), halign=Gtk.Align.END)
+    actions = Gtk.Box(
+        orientation=Gtk.Orientation.HORIZONTAL,
+        spacing=8,
+        halign=Gtk.Align.END,
+    )
+    if offer_diagnostics:
+        actions.append(
+            Gtk.Button(
+                label=_("About and Diagnostics"),
+                action_name="app.about",
+            )
+        )
+    close = Gtk.Button(label=_("Close"))
     close.connect("clicked", lambda _button: window.close())
-    box.append(close)
+    actions.append(close)
+    box.append(actions)
     window.set_content(box)
     window.present()
+
+
+def _application_menu_button() -> Gtk.MenuButton:
+    menu = Gio.Menu()
+    menu.append(_("About 7-Zip for Nautilus"), "app.about")
+    return Gtk.MenuButton(
+        icon_name="open-menu-symbolic",
+        menu_model=menu,
+        tooltip_text=_("Main Menu"),
+    )
+
+
+def _create_about_dialog(debug_info: str) -> Adw.AboutDialog:
+    return Adw.AboutDialog(
+        application_name=_("7-Zip for Nautilus"),
+        application_icon=APP_ID,
+        developer_name="Michael Brylevskii",
+        version=__version__,
+        comments=_("Create and extract archives with 7-Zip from Nautilus."),
+        website=PROJECT_URL,
+        issue_url=ISSUE_URL,
+        license_type=Gtk.License.MIT_X11,
+        debug_info=debug_info,
+        debug_info_filename="nautilus-7zip-diagnostics.txt",
+    )
+
+
+def _current_toolkit_versions() -> ToolkitVersions:
+    return ToolkitVersions(
+        gtk=(Gtk.get_major_version(), Gtk.get_minor_version(), Gtk.get_micro_version()),
+        libadwaita=(
+            Adw.get_major_version(),
+            Adw.get_minor_version(),
+            Adw.get_micro_version(),
+        ),
+        glib=(GLib.MAJOR_VERSION, GLib.MINOR_VERSION, GLib.MICRO_VERSION),
+    )
+
+
+def _current_runtime_issues() -> tuple[RuntimeIssue, ...]:
+    toolkit = _current_toolkit_versions()
+    if toolkit.gtk is None or toolkit.libadwaita is None:  # pragma: no cover
+        return ()
+    return check_runtime_versions(toolkit.gtk, toolkit.libadwaita)
+
+
+def _runtime_error_message(issues: tuple[RuntimeIssue, ...]) -> str:
+    details = ", ".join(
+        _("{component} {actual} (requires {required} or newer)").format(
+            component=issue.component,
+            actual=format_version(issue.actual),
+            required=format_version(issue.required),
+        )
+        for issue in issues
+    )
+    return _(
+        "Unsupported desktop library versions: {details}. "
+        "Run 'nautilus-7zip diagnostics' for a complete report."
+    ).format(details=details)
