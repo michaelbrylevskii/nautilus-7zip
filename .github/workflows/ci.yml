@@ -31,7 +31,9 @@ jobs:
             gir1.2-gtk-4.0 \
             ninja-build \
             python3-gi \
-            python3-venv
+            python3-venv \
+            xauth \
+            xvfb
 
       - name: Install development dependencies
         run: |
@@ -58,7 +60,9 @@ jobs:
             build/io.github.michaelbrylevskii.Nautilus7Zip.desktop
 
       - name: Test
-        run: meson test -C build --print-errorlogs
+        env:
+          GDK_BACKEND: x11
+        run: xvfb-run -a meson test -C build --print-errorlogs
 
       - name: Stage installation
         run: DESTDIR="$RUNNER_TEMP/install-root" meson install -C build

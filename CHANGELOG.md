@@ -12,6 +12,8 @@ All notable changes will be documented in this file. The format follows
   plugin-capable `7z` command when both are available.
 - A strict `--sevenzip PATH` override with visible startup errors for missing,
   unusable, or timed-out backends.
+- An Xvfb-backed GTK widget smoke-test harness for headless CI and release
+  verification.
 
 ### Fixed
 

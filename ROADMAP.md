@@ -12,7 +12,8 @@ Priorities may change in response to compatibility findings and user feedback.
 3. Verify clean installation and removal from a tagged source archive across a
    small supported-distribution matrix.
 4. Publish a maintained Arch/Manjaro package recipe.
-5. Add GTK smoke tests and contract tests for the Nautilus menu provider.
+5. Expand the Xvfb-backed GTK smoke suite and add contract tests for the
+   Nautilus menu provider.
 
 ## v0.3.0 — Everyday workflow
 

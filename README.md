@@ -11,9 +11,10 @@ The project uses a system `7z` or `7zz` executable. It does not replace
 Nautilus' built-in **Compress…** action and does not bundle an archiving engine.
 
 > [!IMPORTANT]
-> The project is currently alpha quality. The command model and process
-> runner are extensively tested, but the Nautilus and GTK integration still
-> needs broader real-world testing across GNOME releases and distributions.
+> The project is currently alpha quality. The command model and process runner
+> are extensively tested, and lightweight GTK widget smoke tests run under a
+> virtual display in CI. Nautilus integration still needs broader real-world
+> testing across GNOME releases and distributions.
 
 ## Features
 
@@ -114,7 +115,7 @@ Build and development:
 
 On Arch Linux or Manjaro, the relevant packages are normally named `7zip`,
 `nautilus-python`, `python-gobject`, `gtk4`, `libadwaita`, `meson`, `ninja`, and
-`gettext`.
+`gettext`. Headless GTK test hosts additionally need `xorg-server-xvfb`.
 
 ## Build and install
 
@@ -198,11 +199,19 @@ meson compile -C build
 meson test -C build --print-errorlogs
 ```
 
-The coverage gate is 85%. Platform adapters requiring a live GTK display or a
-running Nautilus instance are excluded from line coverage; their logic is kept
-thin, while command construction, input validation, path handling, selection
-manifests, terminal-output rendering, progress parsing, and process execution
-are covered directly.
+On a headless host, run the widget tests through a virtual display:
+
+```bash
+xvfb-run -a pytest
+xvfb-run -a meson test -C build --print-errorlogs
+```
+
+The coverage gate is 85%. The GTK application adapter is excluded from line
+coverage, but focused widget behavior is exercised by smoke tests with an
+initialized libadwaita display. Code requiring a running Nautilus instance
+remains outside direct coverage and is kept thin. Command construction, input
+validation, path handling, selection manifests, terminal-output rendering,
+progress parsing, and process execution are covered directly.
 
 Every push and pull request runs linting, the Meson build and staged install,
 the test suite, and integration tests against the system `7z`. Tags matching

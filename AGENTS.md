@@ -120,9 +120,11 @@ Keep option validation and command generation independent of GTK:
 ## Testing requirements
 
 - The required coverage gate is 85%; aim for 90%+ for non-UI code.
-- `application.py` is excluded from line coverage because CI does not provide a
-  live display. Keep it thin and add GTK smoke tests when a reliable harness is
-  introduced.
+- `application.py` is excluded from line coverage, but focused real-widget
+  behavior belongs in `tests/test_application_widgets.py`. Initialize
+  libadwaita explicitly and run these tests with an existing desktop display or
+  Xvfb. CI and release workflows must provide Xvfb rather than silently
+  skipping widget tests.
 - Every command option or security-sensitive behavior needs a unit test.
 - Password tests must assert that the secret is absent from argv.
 - Add regression tests before fixing bugs in path handling, archive naming,
@@ -137,6 +139,7 @@ Keep option validation and command generation independent of GTK:
   meson test -C build --print-errorlogs
   ```
 
+- On a headless host, wrap both pytest and Meson test runs with `xvfb-run -a`.
 - For backend changes, also run a temporary-directory integration check against
   the discovered `7z` or `7zz`: create, test, extract, compare content, and
   ensure no test archive is written into the repository.
@@ -167,6 +170,7 @@ Implemented:
 - compact progress header actions plus elapsed, approximate remaining, step,
   and best-effort item statistics;
 - terminal-style rendering of 7-Zip backspace output for the GTK details view;
+- Xvfb-backed GTK widget smoke tests in CI and release verification;
 - stdin password transport;
 - validated `7z`/`7zz` discovery with a strict executable override;
 - Meson installation, gettext scaffolding, complete Russian catalog;
@@ -180,7 +184,8 @@ The ordered product plan lives in `ROADMAP.md`. Immediate follow-ups:
 1. Add a privacy-safe application and backend diagnostics view.
 2. Exercise clean tagged-release installation across supported distributions.
 3. Add a maintained Arch/Manjaro package recipe.
-4. Add a GTK smoke-test harness and test the extension with mocked Nautilus GI.
+4. Expand GTK widget smoke coverage and test the extension with mocked Nautilus
+   GI.
 
 ## Definition of done for changes
 

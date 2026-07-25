@@ -19,6 +19,10 @@ meson compile -C build
 meson test -C build --print-errorlogs
 ```
 
+Use `xvfb-run -a pytest` and
+`xvfb-run -a meson test -C build --print-errorlogs` on a headless host.
+GTK widget smoke tests initialize libadwaita and require a working display.
+
 Coverage must remain at least 85%. New non-UI modules should normally achieve
 90% or better.
 
