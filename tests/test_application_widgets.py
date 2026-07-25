@@ -15,6 +15,8 @@ from gi.repository import Adw, Gdk, Gtk
 
 import nautilus_7zip.application as application_module
 from nautilus_7zip import __version__
+from nautilus_7zip.commands import CommandSpec
+from nautilus_7zip.runner import RunResult
 
 pytestmark = pytest.mark.gtk
 
@@ -62,13 +64,28 @@ def test_about_dialog_exposes_troubleshooting_report() -> None:
     assert dialog.get_debug_info_filename() == "nautilus-7zip-diagnostics.txt"
 
 
-def test_application_menu_targets_about_action() -> None:
-    button = application_module._application_menu_button()
-    menu = button.get_menu_model()
+def test_about_footer_is_a_quiet_centered_action() -> None:
+    button = application_module._about_footer_button()
 
-    assert menu is not None
-    assert menu.get_n_items() == 1
-    label = menu.get_item_attribute_value(0, "label", None)
-    action = menu.get_item_attribute_value(0, "action", None)
-    assert label is not None and label.get_string() == "About 7-Zip for Nautilus"
-    assert action is not None and action.get_string() == "app.about"
+    assert button.get_label() == "About 7-Zip for Nautilus"
+    assert button.get_action_name() == "app.about"
+    assert button.get_halign() == Gtk.Align.CENTER
+    assert button.has_css_class("flat")
+
+
+def test_progress_only_exposes_diagnostics_after_failure() -> None:
+    app = Adw.Application()
+    failed = application_module.ProgressWindow(app, [CommandSpec(("7z", "i"))])
+    cancelled = application_module.ProgressWindow(app, [CommandSpec(("7z", "i"))])
+
+    assert not failed.diagnostics_button.get_visible()
+    failed._completed(RunResult(2, error="backend failed"))
+    assert failed.diagnostics_button.get_visible()
+    assert failed.close_button.get_visible()
+
+    cancelled._completed(RunResult(143, cancelled=True))
+    assert not cancelled.diagnostics_button.get_visible()
+    assert cancelled.close_button.get_visible()
+
+    failed.close()
+    cancelled.close()

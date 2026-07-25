@@ -226,7 +226,6 @@ class _FormWindow(Adw.ApplicationWindow):
         cancel = Gtk.Button(label=_("Cancel"))
         cancel.connect("clicked", lambda _button: self.close())
         self.header.pack_start(cancel)
-        self.header.pack_end(_application_menu_button())
         toolbar.add_top_bar(self.header)
 
         self.page = Adw.PreferencesPage()
@@ -243,6 +242,13 @@ class _FormWindow(Adw.ApplicationWindow):
         button.connect("clicked", callback)
         self.header.pack_end(button)
         self.set_default_widget(button)
+        return button
+
+    def add_about_footer(self) -> Gtk.Button:
+        group = Adw.PreferencesGroup()
+        button = _about_footer_button()
+        group.add(button)
+        self.page.add(group)
         return button
 
     def create_path_row(self, label: str, initial: Path) -> Adw.EntryRow:
@@ -452,6 +458,7 @@ class CreateArchiveWindow(_FormWindow):
         options_group.add(self.advanced)
         self.page.add(options_group)
 
+        self.about_button = self.add_about_footer()
         self.create_button = self.add_primary_action(_("Create"), self._create)
         for entry in (self.name, self.password, self.confirm_password):
             entry.connect("changed", self._validate_form)
@@ -709,6 +716,7 @@ class ExtractArchiveWindow(_FormWindow):
         group.add(self.password)
         group.add(self.overwrite)
         self.page.add(group)
+        self.about_button = self.add_about_footer()
         self.add_primary_action(_("Extract"), self._extract)
 
     def _extract(self, _button: Gtk.Button) -> None:
@@ -759,8 +767,13 @@ class ProgressWindow(Adw.ApplicationWindow):
         self.close_button = Gtk.Button(label=_("Close"), visible=False)
         self.close_button.add_css_class("suggested-action")
         self.close_button.connect("clicked", lambda _button: self.close())
-        header.pack_end(_application_menu_button())
         header.pack_end(self.close_button)
+        self.diagnostics_button = Gtk.Button(
+            label=_("Diagnostics"),
+            action_name="app.about",
+            visible=False,
+        )
+        header.pack_end(self.diagnostics_button)
         toolbar.add_top_bar(header)
         content = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -901,6 +914,7 @@ class ProgressWindow(Adw.ApplicationWindow):
             self.status.set_label(_("Operation failed"))
             self._append_output("\n" + detail + "\n")
             self.details.set_expanded(True)
+            self.diagnostics_button.set_visible(True)
         self._finish()
 
     def _cancel(self, _button: Gtk.Button) -> None:
@@ -1106,14 +1120,16 @@ def _show_standalone_error(
     window.present()
 
 
-def _application_menu_button() -> Gtk.MenuButton:
-    menu = Gio.Menu()
-    menu.append(_("About 7-Zip for Nautilus"), "app.about")
-    return Gtk.MenuButton(
-        icon_name="open-menu-symbolic",
-        menu_model=menu,
-        tooltip_text=_("Main Menu"),
+def _about_footer_button() -> Gtk.Button:
+    button = Gtk.Button(
+        label=_("About 7-Zip for Nautilus"),
+        action_name="app.about",
+        halign=Gtk.Align.CENTER,
+        margin_top=4,
+        margin_bottom=4,
     )
+    button.add_css_class("flat")
+    return button
 
 
 def _create_about_dialog(debug_info: str) -> Adw.AboutDialog:

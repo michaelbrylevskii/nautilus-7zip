@@ -24,6 +24,9 @@ All notable changes will be documented in this file. The format follows
 
 - Restored left alignment for choices in simple option drop-downs while
   keeping the selected row value right-aligned.
+- Kept primary form actions at the edge of the header bar by moving
+  About/Troubleshooting to a quiet footer action; failed operations expose
+  Diagnostics alongside Close.
 
 ## [0.1.0] - 2026-07-19
 

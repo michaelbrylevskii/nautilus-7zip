@@ -239,7 +239,9 @@ The `diagnostics` action requires no selected files and succeeds even when the
 backend is missing. It reports application, desktop, toolkit, Nautilus, locale,
 and backend versions without including archive selections, passwords, the
 hostname, username, or the complete process environment. The same report is
-available from **About 7-Zip for Nautilus → Troubleshooting** in the helper.
+available from **About 7-Zip for Nautilus → Troubleshooting** using the footer
+action in the helper's option forms. Failed operations also expose a
+**Diagnostics** action next to **Close**.
 
 ## Architecture
 

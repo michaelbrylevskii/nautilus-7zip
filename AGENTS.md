@@ -123,6 +123,10 @@ Keep option validation and command generation independent of GTK:
 - Keep progress actions in the header bar. Show elapsed time unconditionally;
   only show approximate remaining time and item totals when 7-Zip has reported
   enough trustworthy information, and label estimates as approximate.
+- Keep option-form header bars focused on Cancel and the primary action. Expose
+  About/Troubleshooting as a quiet centered footer action inside the scrollable
+  preferences content. In progress windows, show Diagnostics next to Close
+  only after an operation failure.
 
 ## Testing requirements
 
