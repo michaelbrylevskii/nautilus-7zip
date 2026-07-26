@@ -6,6 +6,8 @@ All notable changes will be documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-26
+
 ### Added
 
 - Automatic discovery and validation of `7z` and `7zz`, preferring the
@@ -58,5 +60,6 @@ All notable changes will be documented in this file. The format follows
 - Nautilus selections are transferred through mode-0600 manifests and limited
   to native filesystem paths.
 
-[Unreleased]: https://github.com/michaelbrylevskii/nautilus-7zip/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/michaelbrylevskii/nautilus-7zip/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/michaelbrylevskii/nautilus-7zip/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/michaelbrylevskii/nautilus-7zip/releases/tag/v0.1.0

@@ -3,19 +3,26 @@
 This roadmap records the intended product direction without promising dates.
 Priorities may change in response to compatibility findings and user feedback.
 
-## v0.2.0 — Reliability and distribution
+## v0.2.0 — Reliability and diagnostics
 
 - [x] Discover and validate `7z` and `7zz` backends, with a strict executable
    override and actionable startup errors.
 - [x] Add a privacy-safe diagnostics view containing application, backend,
    Nautilus, GTK, libadwaita, and locale versions.
-- [ ] Verify clean installation and removal from a tagged source archive across a
-   small supported-distribution matrix.
-- [ ] Publish a maintained Arch/Manjaro package recipe.
-- [ ] Expand the Xvfb-backed GTK smoke suite and add contract tests for the
-   Nautilus menu provider.
+- [x] Validate the supported GTK/libadwaita runtime before presenting operation
+   windows.
+- [x] Exercise real GTK widgets under Xvfb in CI and release verification.
+- [x] Dispatch desktop `Open With…` requests by selection type.
 
-## v0.3.0 — Everyday workflow
+## v0.3.0 — Distribution and integration
+
+- Verify clean installation and removal from tagged source archives across a
+  small supported-distribution matrix.
+- Publish a maintained Arch/Manjaro package recipe.
+- Expand GTK widget smoke coverage and add contract tests for the Nautilus menu
+  provider.
+
+## v0.4.0 — Everyday workflow
 
 - Persist non-secret defaults with GSettings.
 - Add reusable Fast, Balanced, Maximum, and Custom presets.
@@ -26,7 +33,7 @@ Priorities may change in response to compatibility findings and user feedback.
 
 Passwords and other secrets will never be persisted as defaults.
 
-## v0.4.0 — Advanced compression
+## v0.5.0 — Advanced compression
 
 - Expose format-aware compression methods, dictionary sizes, word sizes, and
   memory limits where the selected backend supports them.
